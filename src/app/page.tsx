@@ -88,7 +88,7 @@ export default function Home() {
   });
 
   const handleCategoryClick = (category: string) => {
-    setSelectedCategory(category);
+    setSelectedCategory(category === selectedCategory ? null : category);
   };
 
   const handleItemClick = (itemId: number) => {
