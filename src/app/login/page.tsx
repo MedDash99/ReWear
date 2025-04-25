@@ -4,7 +4,6 @@ import {Button} from "@/components/ui/button";
 import {signIn} from "next-auth/react";
 import {Input} from "@/components/ui/input";
 import {useState} from "react";
-import Image from "next/image";
 
 export default function SignInWithGoogle() {
   const [email, setEmail] = useState("");
@@ -13,13 +12,15 @@ export default function SignInWithGoogle() {
     <div className="flex items-center justify-center h-screen bg-background">
       <div className="w-full max-w-md p-6 bg-card rounded-lg shadow-md">
         <div className="flex flex-col items-center">
-          <Image
-            src="https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-web-design-seo-marketing-data-analytics-1.png"
-            alt="Google Logo"
-            width={48}
-            height={48}
-            className="mb-4"
-          />
+          <div id="container">
+            <div id="logo">
+              <div className="g-line"></div>
+              <span className="red"></span>
+              <span className="yellow"></span>
+              <span className="green"></span>
+              <span className="blue"></span>
+            </div>
+          </div>
           <h1 className="text-2xl font-semibold text-foreground mb-2">Sign in</h1>
           <p className="text-sm text-muted-foreground mb-6">Use your Google Account</p>
         </div>
@@ -53,3 +54,4 @@ export default function SignInWithGoogle() {
     </div>
   );
 }
+

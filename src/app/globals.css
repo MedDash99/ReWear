@@ -6,6 +6,63 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Google Logo CSS */
+#container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+#logo {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.g-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  transform: translateY(-50%);
+  background: linear-gradient(to right, #4285F4, #DB4437, #F4B400, #0F9D58, #4285F4);
+  z-index: 0;
+}
+
+#logo span {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+#logo span.red {
+  top: 0;
+  left: 0;
+  background-color: #DB4437;
+}
+
+#logo span.yellow {
+  top: 0;
+  right: 0;
+  background-color: #F4B400;
+}
+
+#logo span.green {
+  bottom: 0;
+  right: 0;
+  background-color: #0F9D58;
+}
+
+#logo span.blue {
+  bottom: 0;
+  left: 0;
+  background-color: #4285F4;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%; /* White */
@@ -86,3 +143,4 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
