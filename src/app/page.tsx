@@ -91,13 +91,23 @@ export default function Home() {
     setSelectedCategory(category);
   };
 
-   const handleItemClick = (itemId: number) => {
-     router.push(`/checkout/${itemId}`);
-   };
+  const handleItemClick = (itemId: number) => {
+    router.push(`/checkout/${itemId}`);
+  };
 
   return (
     <div className="container mx-auto p-4">
       <div className="flex items-center justify-between mb-4">
+        <div className="flex space-x-4">
+          <Button onClick={() => router.push("/login")}>Sign in with Google</Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/login-buyer")}
+          >
+            Buyer Login
+          </Button>
+          <Button variant="outline" onClick={() => router.push("/login-seller")}>Seller Login</Button>
+        </div>
         <h1 className="text-2xl font-bold">ReVinted</h1>
         <div className="flex items-center space-x-2">
           <Input
@@ -121,13 +131,15 @@ export default function Home() {
             {category}
           </Button>
         ))}
-         <Button
-            variant="outline"
-            onClick={() => setSelectedCategory(null)}
-            className={selectedCategory === null ? "bg-accent text-accent-foreground" : ""}
-          >
-            All
-          </Button>
+        <Button
+          variant="outline"
+          onClick={() => setSelectedCategory(null)}
+          className={
+            selectedCategory === null ? "bg-accent text-accent-foreground" : ""
+          }
+        >
+          All
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
