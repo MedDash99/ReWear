@@ -9,50 +9,84 @@ import { Badge } from "@/components/ui/badge";
 
 const categories = ["Clothing", "Shoes", "Accessories", "Bags"];
 
-export default function Home() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [items, setItems] = useState([
-    {
-      id: 1,
-      name: "Vintage Dress",
-      description: "Beautiful vintage dress, perfect for summer.",
-      price: 45,
-      imageUrl: "https://picsum.photos/200/300",
-      category: "Clothing",
-      seller: {
-        name: "Jane Doe",
-        avatarUrl: "https://picsum.photos/50/50",
-      },
+type Item = {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+  seller: {
+    name: string;
+    avatarUrl: string;
+  };
+};
+
+const initialItems: Item[] = [
+  {
+    id: 1,
+    name: "Vintage Dress",
+    description: "Beautiful vintage dress, perfect for summer.",
+    price: 45,
+    imageUrl: "https://picsum.photos/200/300",
+    category: "Clothing",
+    seller: {
+      name: "Jane Doe",
+      avatarUrl: "https://picsum.photos/50/50",
     },
-    {
-      id: 2,
-      name: "Leather Boots",
-      description: "High-quality leather boots, worn only a few times.",
-      price: 80,
-      imageUrl: "https://picsum.photos/200/301",
-      category: "Shoes",
-      seller: {
-        name: "John Smith",
-        avatarUrl: "https://picsum.photos/51/51",
-      },
+  },
+  {
+    id: 2,
+    name: "Leather Boots",
+    description: "High-quality leather boots, worn only a few times.",
+    price: 80,
+    imageUrl: "https://picsum.photos/200/301",
+    category: "Shoes",
+    seller: {
+      name: "John Smith",
+      avatarUrl: "https://picsum.photos/51/51",
+    },
     },
     {
       id: 3,
-      name: "Designer Handbag",
-      description: "Authentic designer handbag in excellent condition.",
-      price: 120,
-      imageUrl: "https://picsum.photos/200/302",
-      category: "Bags",
+      name: "Gold Bracelet",
+      description: "Authentic gold bracelet, like new",
+      price: 300,
+      imageUrl: "https://picsum.photos/200/303",
+      category: "Accessories",
       seller: {
-        name: "Alice Johnson",
-        avatarUrl: "https://picsum.photos/52/52",
+        name: "Bob Miller",
+        avatarUrl: "https://picsum.photos/53/53",
       },
     },
-  ]);
+  {
+    id: 4,
+    name: "Designer Handbag",
+    description: "Authentic designer handbag in excellent condition.",
+    price: 120,
+    imageUrl: "https://picsum.photos/200/302",
+    category: "Bags",
+    seller: {
+      name: "Alice Johnson",
+      avatarUrl: "https://picsum.photos/52/52",
+    },
+  },
+];
 
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+export default function Home() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [items, setItems] = useState<Item[]>(initialItems);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const filteredItems = items.filter((item) => {
+    const searchMatch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const categoryMatch = selectedCategory ? item.category === selectedCategory : true;
+    return searchMatch && categoryMatch;
+  });
+
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(category);
+  };
 
   return (
     <div className="container mx-auto p-4">
@@ -71,8 +105,22 @@ export default function Home() {
 
       <div className="flex space-x-4 mb-4">
         {categories.map((category) => (
-          <Button variant="outline" key={category}>{category}</Button>
+          <Button
+            variant="outline"
+            key={category}
+            onClick={() => handleCategoryClick(category)}
+            className={selectedCategory === category ? "bg-accent text-accent-foreground" : ""}
+          >
+            {category}
+          </Button>
         ))}
+         <Button
+            variant="outline"
+            onClick={() => setSelectedCategory(null)}
+            className={selectedCategory === null ? "bg-accent text-accent-foreground" : ""}
+          >
+            All
+          </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
