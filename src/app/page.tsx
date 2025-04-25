@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from 'next/navigation';
 
 const categories = ["Clothing", "Shoes", "Accessories", "Bags"];
 
@@ -78,6 +79,8 @@ export default function Home() {
   const [items, setItems] = useState<Item[]>(initialItems);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
+  const router = useRouter();
+
   const filteredItems = items.filter((item) => {
     const searchMatch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     const categoryMatch = selectedCategory ? item.category === selectedCategory : true;
@@ -87,6 +90,10 @@ export default function Home() {
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category);
   };
+
+   const handleItemClick = (itemId: number) => {
+     router.push(`/checkout/${itemId}`);
+   };
 
   return (
     <div className="container mx-auto p-4">
@@ -125,7 +132,7 @@ export default function Home() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredItems.map((item) => (
-          <Card key={item.id}>
+          <Card key={item.id} onClick={() => handleItemClick(item.id)} className="cursor-pointer">
             <CardHeader>
               <CardTitle>{item.name}</CardTitle>
               <CardDescription>{item.description}</CardDescription>
