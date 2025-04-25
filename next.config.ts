@@ -16,8 +16,15 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.freepnglogos.com',
+        port: '',
+        pathname: '/uploads/**',
+      },
     ],
   },
 };
 
 export default nextConfig;
+
