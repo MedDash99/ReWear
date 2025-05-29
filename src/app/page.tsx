@@ -1,175 +1,135 @@
+// src/app/page.tsx
 "use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { useRouter } from 'next/navigation';
+// Card related imports are no longer needed directly here if ContentCard handles all card UI
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+// import { Badge } from "@/components/ui/badge";
+import Header from '../components/ui/fullHeader';       // Your Header component
+import LoginCard from '../components/ui/loginCard';
+import ContentCard from '../components/ui/contentCard'; // <<< IMPORT THE NEW ContentCard COMPONENT
+
+// This Item type definition should be consistent with the one in ContentCard.tsx
+// and what your /api/products endpoint returns.
+// Consider moving this to a shared types file (e.g., src/types/index.ts)
+type Item = {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+  sellerId: number | string;
+  seller: {
+    name: string | null;
+    avatarUrl: string | null;
+  };
+};
 
 const categories = ["Clothing", "Shoes", "Accessories", "Bags"];
 
-type Item = {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  category: string;
-  seller: {
-    name: string;
-    avatarUrl: string;
-  };
-};
+export default function StoreLandingPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [items, setItems] = useState<Item[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const initialItems: Item[] = [
-  {
-    id: 1,
-    name: "Vintage Dress",
-    description: "Beautiful vintage dress, perfect for summer.",
-    price: 45,
-    imageUrl: "https://picsum.photos/200/300",
-    category: "Clothing",
-    seller: {
-      name: "Jane Doe",
-      avatarUrl: "https://picsum.photos/50/50",
-    },
-  },
-  {
-    id: 2,
-    name: "Leather Boots",
-    description: "High-quality leather boots, worn only a few times.",
-    price: 80,
-    imageUrl: "https://picsum.photos/200/301",
-    category: "Shoes",
-    seller: {
-      name: "John Smith",
-      avatarUrl: "https://picsum.photos/51/51",
-    },
-    },
-    {
-      id: 3,
-      name: "Gold Bracelet",
-      description: "Authentic gold bracelet, like new",
-      price: 300,
-      imageUrl: "https://picsum.photos/200/303",
-      category: "Accessories",
-      seller: {
-        name: "Bob Miller",
-        avatarUrl: "https://picsum.photos/53/53",
-      },
-    },
-  {
-    id: 4,
-    name: "Designer Handbag",
-    description: "Authentic designer handbag in excellent condition.",
-    price: 120,
-    imageUrl: "https://picsum.photos/200/302",
-    category: "Bags",
-    seller: {
-      name: "Alice Johnson",
-      avatarUrl: "https://picsum.photos/52/52",
-    },
-  },
-];
+  // useRouter is now used within ContentCard for navigation
+  // const router = useRouter();
 
-export default function Home() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [items, setItems] = useState<Item[]>(initialItems);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const filteredItems = items.filter((item) => {
+    const searchMatch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const categoryMatch = selectedCategory ? item.category === selectedCategory : true;
+    return searchMatch && categoryMatch;
+  });
 
-  const router = useRouter();
+  const fetchItems = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      console.log('Fetching items from API...');
+      const response = await fetch('/api/products');
+      if (!response.ok) {
+        let errorData;
+        try { errorData = await response.json(); } catch { errorData = { message: response.statusText}}
+        throw new Error(errorData.message || 'Failed to fetch products');
+      }
+      const data: Item[] = await response.json();
+      console.log('Received items from API:', data);
+      setItems(data);
+    } catch (err) {
+      console.error('Error fetching items:', err);
+      setError((err as Error).message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const filteredItems = items.filter((item) => {
-    const searchMatch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const categoryMatch = selectedCategory ? item.category === selectedCategory : true;
-    return searchMatch && categoryMatch;
-  });
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
-  const handleCategoryClick = (category: string) => {
-    setSelectedCategory(category === selectedCategory ? null : category);
-  };
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(category === selectedCategory ? null : category);
+  };
 
-  const handleItemClick = (itemId: number) => {
-    router.push(`/checkout/${itemId}`);
-  };
+  // handleItemCardClick is now handled within ContentCard.tsx
 
-  return (
-    <div className="container mx-auto p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex space-x-4">
-          <Button onClick={() => router.push("/login")}>Sign in with Google</Button>
-          <Button
-            variant="outline"
-            onClick={() => router.push("/login-buyer")}
-          >
-            Buyer Login
-          </Button>
-          <Button variant="outline" onClick={() => router.push("/login-seller")}>Seller Login</Button>
-        </div>
-        <h1 className="text-2xl font-bold">ReVinted</h1>
-        <div className="flex items-center space-x-2">
-          <Input
-            type="text"
-            placeholder="Search for items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <Button>Search</Button>
-        </div>
-      </div>
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <Header
+        onSignInClick={() => setIsLoginOpen(true)}
+        onSignUpClick={() => setIsLoginOpen(true)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+     <main className="w-full max-w-screen-xl mx-auto p-2 flex-grow">
+        {/* Category Filters */}
+        <div className="flex flex-wrap gap-2 mb-6 justify-center">
+          <Button
+            variant={selectedCategory === null ? "default" : "outline"}
+            onClick={() => setSelectedCategory(null)}
+          >
+            All
+          </Button>
+          {categories.map((category) => (
+            <Button
+              variant={selectedCategory === category ? "default" : "outline"}
+              key={category}
+              onClick={() => handleCategoryClick(category)}
+            >
+              {category}
+            </Button>
+          ))}
+        </div>
 
-      <div className="flex space-x-4 mb-4">
-        {categories.map((category) => (
-          <Button
-            variant="outline"
-            key={category}
-            onClick={() => handleCategoryClick(category)}
-            className={selectedCategory === category ? "bg-accent text-accent-foreground" : ""}
-          >
-            {category}
-          </Button>
-        ))}
-        <Button
-          variant="outline"
-          onClick={() => setSelectedCategory(null)}
-          className={
-            selectedCategory === null ? "bg-accent text-accent-foreground" : ""
-          }
-        >
-          All
-        </Button>
-      </div>
+        {isLoading && <div className="text-center py-10"><p>Loading items...</p></div>}
+        {error && <div className="text-center py-10 text-red-500"><p>Error: {error}</p></div>}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredItems.map((item) => (
-          <Card key={item.id} onClick={() => handleItemClick(item.id)} className="cursor-pointer">
-            <CardHeader>
-              <CardTitle>{item.name}</CardTitle>
-              <CardDescription>{item.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <img
-                src={item.imageUrl}
-                alt={item.name}
-                className="rounded-md mb-2 w-full h-48 object-cover"
-              />
-              <div className="flex items-center justify-between">
-                <span>Price: ${item.price}</span>
-                <Badge>{item.category}</Badge>
-              </div>
-              <div className="flex items-center mt-2">
-                <Avatar>
-                  <AvatarImage src={item.seller.avatarUrl} alt={item.seller.name} />
-                  <AvatarFallback>{item.seller.name.substring(0, 2)}</AvatarFallback>
-                </Avatar>
-                <span className="ml-2">{item.seller.name}</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        {/* Items Grid - Now uses ContentCard */}
+        {!isLoading && !error && filteredItems.length > 0 ? (
+   <div className="
+   grid
+   grid-cols-[repeat(auto-fill,minmax(240px,1fr))]
+   gap-2
+ ">
+ {filteredItems.map(item => (
+   <ContentCard key={item.id} item={item} />
+ ))}
+</div>
+
+        ) : (
+          !isLoading && !error && <div className="text-center py-10 text-gray-500">
+            <p>No items found matching your criteria.</p>
+          </div>
+        )}
+      </main>
+
+      {isLoginOpen && <LoginCard onClose={() => setIsLoginOpen(false)} />}
     </div>
-  );
+  );
 }
