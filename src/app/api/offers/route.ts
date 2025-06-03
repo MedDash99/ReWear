@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB } from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
@@ -10,23 +10,43 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const db = await getDB();
+    const supabase = await createClient();
     const userId = session.user.id;
 
-    // Get all offers made by this user
-    const offers = await db.prepare(`
-      SELECT o.id, o.offer_price, o.message, o.status, o.created_at, o.updated_at,
-             i.id as product_id, i.name as product_name, i.price as product_price, 
-             i.imageUrl as product_image,
-             u.name as seller_name
-      FROM offers o
-      JOIN items i ON o.product_id = i.id
-      JOIN users u ON i.sellerId = u.id
-      WHERE o.buyer_id = ?
-      ORDER BY o.created_at DESC
-    `).all(userId);
+    // Get all offers made by this user with joined data
+    const { data: offers, error } = await supabase
+      .from('offers')
+      .select(`
+        id, offer_price, message, status, created_at, updated_at,
+        items!product_id (
+          id, name, price, image_url,
+          users!seller_id (name)
+        )
+      `)
+      .eq('buyer_id', userId)
+      .order('created_at', { ascending: false });
 
-    return NextResponse.json(offers, { status: 200 });
+    if (error) {
+      console.error("Error fetching user offers:", error);
+      throw error;
+    }
+
+    // Transform the data to match the expected format
+    const transformedOffers = offers?.map(offer => ({
+      id: offer.id,
+      offer_price: offer.offer_price,
+      message: offer.message,
+      status: offer.status,
+      created_at: offer.created_at,
+      updated_at: offer.updated_at,
+      product_id: offer.items?.id,
+      product_name: offer.items?.name,
+      product_price: offer.items?.price,
+      product_image: offer.items?.image_url,
+      seller_name: offer.items?.users?.name
+    })) || [];
+
+    return NextResponse.json(transformedOffers, { status: 200 });
 
   } catch (error: any) {
     console.error("Error fetching user offers:", error);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB } from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
+import { createOffer, getItemById, getOffersByProduct } from '@/lib/database';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import crypto from 'crypto';
@@ -29,16 +30,14 @@ export async function POST(
       return NextResponse.json({ message: "Invalid offer amount" }, { status: 400 });
     }
 
-    const db = await getDB();
-
     // Check if product exists and get its price
-    const product = await db.prepare('SELECT price, sellerId FROM items WHERE id = ?').get(Number(id));
+    const product = await getItemById(Number(id));
     if (!product) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 });
     }
 
     // Prevent users from making offers on their own products
-    if (product.sellerId === buyerId) {
+    if (product.seller_id === buyerId) {
       return NextResponse.json({ message: "Cannot make offer on your own product" }, { status: 400 });
     }
 
@@ -47,18 +46,17 @@ export async function POST(
       return NextResponse.json({ message: "Offer must be less than the product price" }, { status: 400 });
     }
 
-    // Create offer
-    const offerId = crypto.randomUUID();
-    const stmt = await db.prepare(`
-      INSERT INTO offers (id, product_id, buyer_id, offer_price, message, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `);
-
-    await stmt.run(offerId, Number(id), buyerId, numericOffer, message || null);
+    // Create offer using the Supabase function
+    const newOffer = await createOffer({
+      product_id: Number(id),
+      buyer_id: buyerId,
+      offer_price: numericOffer,
+      message: message || undefined
+    });
 
     return NextResponse.json({ 
       message: "Offer submitted successfully",
-      offerId: offerId
+      offerId: newOffer.id
     }, { status: 201 });
 
   } catch (error: any) {
@@ -85,30 +83,44 @@ export async function GET(
   }
 
   try {
-    const db = await getDB();
     const userId = session.user.id;
 
     // Check if user owns this product
-    const product = await db.prepare('SELECT sellerId FROM items WHERE id = ?').get(Number(id));
+    const product = await getItemById(Number(id));
     if (!product) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 });
     }
 
-    if (product.sellerId !== userId) {
+    if (product.seller_id !== userId) {
       return NextResponse.json({ message: "Not authorized to view offers for this product" }, { status: 403 });
     }
 
-    // Get all offers for this product
-    const offers = await db.prepare(`
-      SELECT o.id, o.offer_price, o.message, o.status, o.created_at,
-             u.name as buyer_name, u.email as buyer_email
-      FROM offers o
-      JOIN users u ON o.buyer_id = u.id
-      WHERE o.product_id = ?
-      ORDER BY o.created_at DESC
-    `).all(Number(id));
+    // Get all offers for this product using Supabase
+    const offers = await getOffersByProduct(Number(id));
 
-    return NextResponse.json(offers, { status: 200 });
+    // Transform the offers to include buyer information
+    const supabase = await createClient();
+    const transformedOffers = await Promise.all(
+      offers.map(async (offer: any) => {
+        const { data: buyer } = await supabase
+          .from('users')
+          .select('name, email')
+          .eq('id', offer.buyer_id)
+          .single();
+
+        return {
+          id: offer.id,
+          offer_price: offer.offer_price,
+          message: offer.message,
+          status: offer.status,
+          created_at: offer.created_at,
+          buyer_name: buyer?.name,
+          buyer_email: buyer?.email
+        };
+      })
+    );
+
+    return NextResponse.json(transformedOffers, { status: 200 });
 
   } catch (error: any) {
     console.error("Error fetching offers:", error);

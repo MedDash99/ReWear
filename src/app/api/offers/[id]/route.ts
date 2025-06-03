@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB } from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
@@ -26,22 +26,26 @@ export async function PATCH(
       return NextResponse.json({ message: "Invalid status. Must be 'accepted' or 'rejected'" }, { status: 400 });
     }
 
-    const db = await getDB();
+    const supabase = await createClient();
 
     // Get offer details and verify ownership
-    const offer = await db.prepare(`
-      SELECT o.*, i.sellerId, i.name as product_name
-      FROM offers o
-      JOIN items i ON o.product_id = i.id
-      WHERE o.id = ?
-    `).get(id);
+    const { data: offer, error: offerError } = await supabase
+      .from('offers')
+      .select(`
+        *,
+        items!product_id (
+          seller_id, name
+        )
+      `)
+      .eq('id', id)
+      .single();
 
-    if (!offer) {
+    if (offerError || !offer) {
       return NextResponse.json({ message: "Offer not found" }, { status: 404 });
     }
 
     // Check if user owns the product
-    if (offer.sellerId !== userId) {
+    if (offer.items?.seller_id !== userId) {
       return NextResponse.json({ message: "Not authorized to update this offer" }, { status: 403 });
     }
 
@@ -51,29 +55,40 @@ export async function PATCH(
     }
 
     // Update offer status
-    const updateStmt = await db.prepare(`
-      UPDATE offers 
-      SET status = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `);
-    await updateStmt.run(status, id);
+    const { error: updateError } = await supabase
+      .from('offers')
+      .update({ 
+        status: status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (updateError) throw updateError;
 
     // If offer is accepted, mark product as sold
     if (status === 'accepted') {
-      const updateProductStmt = await db.prepare(`
-        UPDATE items 
-        SET status = 'Sold', updatedAt = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `);
-      await updateProductStmt.run(offer.product_id);
+      const { error: productError } = await supabase
+        .from('items')
+        .update({ 
+          status: 'Sold',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', offer.product_id);
+
+      if (productError) throw productError;
 
       // Reject all other pending offers for this product
-      const rejectOthersStmt = await db.prepare(`
-        UPDATE offers 
-        SET status = 'rejected', updated_at = CURRENT_TIMESTAMP
-        WHERE product_id = ? AND id != ? AND status = 'pending'
-      `);
-      await rejectOthersStmt.run(offer.product_id, id);
+      const { error: rejectError } = await supabase
+        .from('offers')
+        .update({ 
+          status: 'rejected',
+          updated_at: new Date().toISOString()
+        })
+        .eq('product_id', offer.product_id)
+        .neq('id', id)
+        .eq('status', 'pending');
+
+      if (rejectError) throw rejectError;
     }
 
     return NextResponse.json({ 
@@ -81,7 +96,7 @@ export async function PATCH(
       offer: {
         id: offer.id,
         status: status,
-        product_name: offer.product_name
+        product_name: offer.items?.name
       }
     }, { status: 200 });
 
@@ -109,25 +124,42 @@ export async function GET(
   }
 
   try {
-    const db = await getDB();
+    const supabase = await createClient();
     const userId = session.user.id;
 
     // Get offer details with product and seller info
-    const offer = await db.prepare(`
-      SELECT o.id, o.offer_price, o.message, o.status, o.created_at, o.updated_at,
-             i.name as product_name, i.price as product_price, i.imageUrl as product_image,
-             u.name as seller_name
-      FROM offers o
-      JOIN items i ON o.product_id = i.id
-      JOIN users u ON i.sellerId = u.id
-      WHERE o.id = ? AND o.buyer_id = ?
-    `).get(id, userId);
+    const { data: offer, error } = await supabase
+      .from('offers')
+      .select(`
+        id, offer_price, message, status, created_at, updated_at,
+        items!product_id (
+          name, price, image_url,
+          users!seller_id (name)
+        )
+      `)
+      .eq('id', id)
+      .eq('buyer_id', userId)
+      .single();
 
-    if (!offer) {
+    if (error || !offer) {
       return NextResponse.json({ message: "Offer not found" }, { status: 404 });
     }
 
-    return NextResponse.json(offer, { status: 200 });
+    // Transform to match expected format
+    const transformedOffer = {
+      id: offer.id,
+      offer_price: offer.offer_price,
+      message: offer.message,
+      status: offer.status,
+      created_at: offer.created_at,
+      updated_at: offer.updated_at,
+      product_name: offer.items?.name,
+      product_price: offer.items?.price,
+      product_image: offer.items?.image_url,
+      seller_name: offer.items?.users?.name
+    };
+
+    return NextResponse.json(transformedOffer, { status: 200 });
 
   } catch (error: any) {
     console.error("Error fetching offer:", error);

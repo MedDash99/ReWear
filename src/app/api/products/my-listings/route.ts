@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDB } from '@/lib/db';
+import { getItemsBySeller } from '@/lib/database';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
@@ -15,16 +15,8 @@ export async function GET() {
     const sellerId = session.user.id;
     console.log(`[API my-listings] Fetching listings for user: ${sellerId}`);
 
-    const db = await getDB();
-    
-    // Fetch ONLY products from the current authenticated user
-    const items = await db.prepare(
-      'SELECT i.id, i.name, i.description, i.price, i.imageUrl, i.category, i.cloudinaryPublicId, i.status, ' +
-      'u.name as sellerName, u.profile_image_url as sellerAvatarUrl ' +
-      'FROM items i JOIN users u ON i.sellerId = u.id ' +
-      'WHERE i.sellerId = ? ' +
-      'ORDER BY i.id DESC' // Show newest items first
-    ).all(sellerId);
+    // Fetch ONLY products from the current authenticated user using Supabase
+    const items = await getItemsBySeller(sellerId);
 
     console.log(`[API my-listings] Found ${items.length} listings for user ${sellerId}`);
 
@@ -34,13 +26,13 @@ export async function GET() {
       name: item.name,
       description: item.description,
       price: Number(item.price),
-      imageUrl: item.imageUrl,
+      imageUrl: item.image_url,
       category: item.category,
-      cloudinaryPublicId: item.cloudinaryPublicId,
+      cloudinaryPublicId: item.cloudinary_public_id,
       status: item.status || 'Active', // Default to 'Active' if status is null
       seller: {
-        name: item.sellerName,
-        avatarUrl: item.sellerAvatarUrl,
+        name: session.user.name || 'Unknown',
+        avatarUrl: session.user.image || null,
       },
     }));
 

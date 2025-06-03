@@ -1,6 +1,6 @@
 // src/app/api/products/create/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getDB } from '@/lib/db'; // Your database helper
+import { createItem } from '@/lib/database'; // Updated import
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -51,22 +51,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Authenticated user ID missing from session data. Check NextAuth callbacks." }, { status: 500 });
     }
 
-    const db = await getDB();
-
     // 1. Parse the JSON payload from the request
-    // The client (ProductListingForm.tsx) now sends a JSON object.
     const body = await request.json();
     const {
       name,
       description,
-      price, // Client should send this as a number (e.g., parseFloat(price))
+      price,
       category,
-      imageUrl, // This is the secure_url from Cloudinary, sent by the client
-      cloudinaryPublicId, // The public_id from Cloudinary, sent by the client
+      imageUrl,
+      cloudinaryPublicId,
     } = body;
 
     // 2. Validate the received data
-    //    (Add more specific validation as needed)
     if (
       !name || typeof name !== 'string' ||
       !description || typeof description !== 'string' ||
@@ -81,13 +77,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. The image is already uploaded to Cloudinary by the client.
-    //    No server-side upload logic is needed here. We directly use the provided
-    //    imageUrl and cloudinaryPublicId.
-
-    // 4. Save item data to the SQLite database
-    // Start of Selection
-    // Log the values before preparing the statement
+    // 3. Save item data to Supabase
     console.log('Attempting to insert item with values:', {
       name,
       description,
@@ -98,59 +88,42 @@ export async function POST(request: NextRequest) {
       sellerId
     });
 
-    const insertStmt = await db.prepare(`
-      INSERT INTO items (name, description, price, category, imageUrl, cloudinaryPublicId, sellerId)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const info = await insertStmt.run(
+    const newItem = await createItem({
       name,
       description,
       price,
       category,
-      imageUrl,
-      cloudinaryPublicId,
-      sellerId
-    );
+      image_url: imageUrl,
+      cloudinary_public_id: cloudinaryPublicId,
+      seller_id: sellerId,
+      status: 'Active'
+    });
 
-    const newItemId = info.lastInsertRowid;
-    if (!newItemId) {
-      console.error("Database insert failed or did not return a lastInsertRowid.", info);
+    if (!newItem) {
+      console.error("Database insert failed.");
       return NextResponse.json({ message: "Failed to save the item to the database." }, { status: 500 });
     }
 
-     // 5. Fetch the newly created item along with seller info
-     const selectNewItemStmt = await db.prepare(
-       'SELECT i.id, i.name, i.description, i.price, i.imageUrl, i.category, i.cloudinaryPublicId, ' +
-       'u.name as sellerName, u.profile_image_url as sellerAvatarUrl ' +
-       'FROM items i JOIN users u ON i.sellerId = u.id ' +
-       'WHERE i.id = ?'
-     );
-    
-     const newItemFromDb: any = await selectNewItemStmt.get(newItemId); /* CORRECTED WITH AWAIT */
-    
-     if (!newItemFromDb) {
-       console.error(`Failed to retrieve item with ID ${newItemId} after insert.`);
-       return NextResponse.json({ message: `Item created with ID ${newItemId}, but failed to retrieve confirmation details.` }, { status: 207 });
-     }
-    
-     // Structure the response
-     const responseItem = {
-         ...newItemFromDb,
-         seller: {
-             name: newItemFromDb.sellerName,
-             avatarUrl: newItemFromDb.sellerAvatarUrl, // This alias matches what client expects
-         },
-     };
-     delete responseItem.sellerName;
-     delete responseItem.sellerAvatarUrl; // These were aliased into responseItem.seller.avatarUrl
-    
-     return NextResponse.json(responseItem, { status: 201 });
-    // ... } catch (error: any) { ... } ...
+    // Structure the response - note: Supabase createItem doesn't include user data, so we'll use the basic item
+    const responseItem = {
+      id: newItem.id,
+      name: newItem.name,
+      description: newItem.description,
+      price: newItem.price,
+      imageUrl: newItem.image_url,
+      category: newItem.category,
+      cloudinaryPublicId: newItem.cloudinary_public_id,
+      status: newItem.status,
+      seller: {
+        name: session.user.name || 'Unknown',
+        avatarUrl: session.user.image || null,
+      },
+    };
+
+    return NextResponse.json(responseItem, { status: 201 });
 
   } catch (error: any) {
     console.error("Error in /api/products/create:", error);
-    // Handle JSON parsing errors specifically, as that's a common issue with request.json()
     if (error instanceof SyntaxError && error.message.toLowerCase().includes("json")) {
         return NextResponse.json({ message: "Invalid JSON payload provided.", details: error.message }, { status: 400 });
     }
