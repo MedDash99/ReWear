@@ -142,15 +142,15 @@ const ProductListingForm: React.FC<ProductListingFormProps> = () => {
 
   // Show loading state or redirect if not authenticated
   if (status === "loading") {
-    return <div className="max-w-md mx-auto p-6 text-center">Loading...</div>;
+    return <div className="max-w-sm sm:max-w-md mx-auto p-4 sm:p-6 text-center">Loading...</div>;
   }
 
   if (status === "unauthenticated") {
     return (
-      <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-md space-y-6 md:mt-10 text-center">
-        <h2 className="text-2xl font-semibold text-teal-700">Authentication Required</h2>
-        <p className="text-gray-600">You need to be logged in to create a product listing.</p>
-        <Button className="bg-teal-600 hover:bg-teal-700" onClick={() => window.location.href = '/api/auth/signin'}>
+      <div className="max-w-sm sm:max-w-md mx-auto p-4 sm:p-6 bg-white rounded-xl shadow-md space-y-4 sm:space-y-6 md:mt-10 text-center">
+        <h2 className="text-xl sm:text-2xl font-semibold text-teal-700">Authentication Required</h2>
+        <p className="text-sm sm:text-base text-gray-600">You need to be logged in to create a product listing.</p>
+        <Button className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto" onClick={() => window.location.href = '/api/auth/signin'}>
           Sign In
         </Button>
       </div>
@@ -158,13 +158,13 @@ const ProductListingForm: React.FC<ProductListingFormProps> = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-md space-y-6 md:mt-10">
-      <h2 className="text-2xl font-semibold text-center text-teal-700">Sell Your Clothing</h2>
+    <div className="max-w-sm sm:max-w-md mx-auto p-4 sm:p-6 bg-white rounded-xl shadow-md space-y-4 sm:space-y-6 md:mt-10">
+      <h2 className="text-xl sm:text-2xl font-semibold text-center text-teal-700">Sell Your Clothing</h2>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* Cloudinary Upload Button and Image Previews Area */}
-        <div className="space-y-4">
-          <Label>Product Images (up to 5)</Label>
+        <div className="space-y-3 sm:space-y-4">
+          <Label className="text-sm sm:text-base">Product Images (up to 5)</Label>
           <div className="flex justify-center">
             <CldUploadButton
               uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
@@ -175,7 +175,7 @@ const ProductListingForm: React.FC<ProductListingFormProps> = () => {
                 maxFiles: 5,
               }}
             >
-              <div className="cursor-pointer border-2 border-dashed border-teal-300 rounded-md w-full h-40 flex items-center justify-center overflow-hidden hover:border-teal-400 transition-colors">
+              <div className="cursor-pointer border-2 border-dashed border-teal-300 rounded-md w-full h-32 sm:h-40 flex items-center justify-center overflow-hidden hover:border-teal-400 transition-colors">
                 {images.length > 0 ? (
                   <img 
                     src={images[0].src} 
@@ -183,7 +183,7 @@ const ProductListingForm: React.FC<ProductListingFormProps> = () => {
                     className="object-cover h-full w-full" 
                   />
                 ) : (
-                  <span className="text-gray-400">Upload Images</span>
+                  <span className="text-sm sm:text-base text-gray-400">Upload Images</span>
                 )}
               </div>
             </CldUploadButton>
@@ -191,9 +191,9 @@ const ProductListingForm: React.FC<ProductListingFormProps> = () => {
 
           {/* Image Previews */}
           {images.length > 0 && (
-            <div className="flex flex-wrap gap-3 p-3 border border-gray-200 rounded-md">
+            <div className="flex flex-wrap gap-2 sm:gap-3 p-2 sm:p-3 border border-gray-200 rounded-md">
               {images.map((img) => (
-                <div key={img.publicId} className="relative w-20 h-20 border border-gray-300 rounded-md overflow-hidden">
+                <div key={img.publicId} className="relative w-16 h-16 sm:w-20 sm:h-20 border border-gray-300 rounded-md overflow-hidden">
                   <img
                     src={img.src}
                     alt={img.originalFilename || 'Uploaded image preview'}
@@ -202,7 +202,8 @@ const ProductListingForm: React.FC<ProductListingFormProps> = () => {
                   <button
                     type="button"
                     onClick={() => removeImage(img.publicId)}
-                    className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-500 hover:bg-opacity-70 transition-colors"
+                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                    aria-label="Remove image"
                   >
                     ×
                   </button>
@@ -212,69 +213,70 @@ const ProductListingForm: React.FC<ProductListingFormProps> = () => {
           )}
         </div>
 
-        {/* Title Input */}
-        <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
-          <Input 
-            id="title" 
-            placeholder="Beige Sweater"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
+        {/* Form Fields */}
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="title" className="text-sm sm:text-base">Product Title</Label>
+            <Input
+              id="title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter product title"
+              required
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description" className="text-sm sm:text-base">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe your item..."
+              rows={3}
+              required
+              className="mt-1 resize-none"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="category" className="text-sm sm:text-base">Category</Label>
+            <Select value={category} onValueChange={setCategory} required>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Clothing">Clothing</SelectItem>
+                <SelectItem value="Shoes">Shoes</SelectItem>
+                <SelectItem value="Accessories">Accessories</SelectItem>
+                <SelectItem value="Bags">Bags</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="price" className="text-sm sm:text-base">Price ($)</Label>
+            <Input
+              id="price"
+              type="number"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0.00"
+              required
+              className="mt-1"
+            />
+          </div>
         </div>
 
-        {/* Description Textarea */}
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea 
-            id="description" 
-            placeholder="Soft beige ribbed sweater"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            rows={4}
-          />
-        </div>
-
-        {/* Category Select */}
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <Select value={category} onValueChange={setCategory} required>
-            <SelectTrigger id="category">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Clothing">Clothing</SelectItem>
-              <SelectItem value="Shoes">Shoes</SelectItem>
-              <SelectItem value="Accessories">Accessories</SelectItem>
-              <SelectItem value="Bags">Bags</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Price Input */}
-        <div className="space-y-2">
-          <Label htmlFor="price">Price ($)</Label>
-          <Input 
-            id="price" 
-            type="number" 
-            placeholder="20"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            required
-            min="0.01"
-            step="0.01"
-          />
-        </div>
-
-        {/* Submit Button */}
-        <Button 
-          type="submit" 
-          className="w-full bg-teal-600 hover:bg-teal-700"
+        <Button
+          type="submit"
           disabled={isSubmitting}
+          className="w-full bg-teal-600 hover:bg-teal-700 text-white py-2.5 sm:py-3 text-sm sm:text-base"
         >
-          {isSubmitting ? "Creating..." : "Create Listing"}
+          {isSubmitting ? 'Creating Listing...' : 'Create Listing'}
         </Button>
       </form>
     </div>

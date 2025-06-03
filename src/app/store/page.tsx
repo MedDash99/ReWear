@@ -118,17 +118,17 @@ export default function StorePage() {
 
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Header Section: Title and Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">Discover Items</h1>
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
+      <div className="flex flex-col space-y-4 mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center sm:text-left">Discover Items</h1>
+        <div className="w-full">
           <Input
             type="text"
             placeholder="Search for items..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-grow sm:flex-grow-0 sm:w-64"
+            className="w-full py-3 text-base"
           />
           {/* Consider removing the explicit search button if search updates live */}
           {/* <Button>Search</Button> */}
@@ -136,10 +136,11 @@ export default function StorePage() {
       </div>
 
       {/* Category Filters */}
-      <div className="flex flex-wrap gap-2 mb-6 justify-center">
+      <div className="flex flex-wrap gap-3 mb-8 justify-center">
          <Button
           variant={selectedCategory === null ? "default" : "outline"} // Highlight 'All' when active
           onClick={() => setSelectedCategory(null)}
+          className="text-sm px-4 py-2.5 min-w-[80px]"
         >
           All
         </Button>
@@ -148,6 +149,7 @@ export default function StorePage() {
             variant={selectedCategory === category ? "default" : "outline"} // Highlight selected category
             key={category}
             onClick={() => handleCategoryClick(category)}
+            className="text-sm px-4 py-2.5 min-w-[80px]"
           >
             {category}
           </Button>
@@ -156,15 +158,15 @@ export default function StorePage() {
 
       {/* Items Grid */}
       {filteredItems.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 justify-items-center">
           {filteredItems.map((item) => (
             <Card
               key={item.id}
               onClick={() => handleItemClick(item.id)}
-              className="cursor-pointer overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 ease-in-out flex flex-col"
+              className="cursor-pointer overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200 ease-in-out flex flex-col w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[280px] xl:max-w-[300px]"
             >
               {/* Image container */}
-              <div className="relative w-full h-56"> {/* Fixed height for image */}
+              <div className="relative w-full aspect-square"> {/* Square aspect ratio for better consistency */}
                  <img
                     src={item.imageUrl}
                     alt={item.name}
@@ -174,25 +176,25 @@ export default function StorePage() {
               </div>
               {/* Content container */}
               <div className="p-4 flex flex-col flex-grow"> {/* Use flex-grow to push footer down */}
-                <CardHeader className="p-0 mb-2">
-                  <CardTitle className="text-lg font-semibold">{item.name}</CardTitle>
+                <CardHeader className="p-0 mb-3">
+                  <CardTitle className="text-base sm:text-lg font-semibold line-clamp-2 min-h-[2.5rem]">{item.name}</CardTitle>
                   {/* Optional: Limit description length */}
                   {/* <CardDescription className="text-sm text-gray-600 truncate">{item.description}</CardDescription> */}
                 </CardHeader>
                 <CardContent className="p-0 flex-grow"> {/* Use flex-grow */}
-                   <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                   <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
                    <div className="flex items-center justify-between mb-3">
                      <span className="text-lg font-bold text-blue-600">${item.price}</span>
-                     <Badge variant="secondary">{item.category}</Badge>
+                     <Badge variant="secondary" className="text-xs">{item.category}</Badge>
                    </div>
                 </CardContent>
                  {/* Footer section within the card */}
                  <div className="flex items-center mt-auto pt-3 border-t border-gray-100"> {/* mt-auto pushes this down */}
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={item.seller.avatarUrl} alt={item.seller.name} />
-                      <AvatarFallback>{item.seller.name.substring(0, 1)}</AvatarFallback>
+                      <AvatarFallback className="text-xs">{item.seller.name.substring(0, 1)}</AvatarFallback>
                     </Avatar>
-                    <span className="ml-2 text-sm text-gray-700">{item.seller.name}</span>
+                    <span className="ml-2 text-sm text-gray-700 truncate">{item.seller.name}</span>
                  </div>
               </div>
             </Card>

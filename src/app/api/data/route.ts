@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
-import { getDB } from '@/lib/db'; // Adjust import path based on your structure
+import { supabase } from '@/lib/supabase'; // Updated import
 
 export async function GET(request: Request) {
   try {
-    // Ensure DB is initialized before using it
-    const db = await getDB();
-    console.log('Database ready for API route.');
+    console.log('Fetching users from Supabase...');
 
-    // Now you can use the db instance to query
-    const users = await db.prepare('SELECT * FROM users').all();
+    // Use Supabase to query users
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('*');
+
+    if (error) {
+      console.error("Supabase Error:", error);
+      return NextResponse.json({ message: 'Failed to fetch data' }, { status: 500 });
+    }
 
     return NextResponse.json({ users });
 

@@ -8,6 +8,7 @@ import Providers from "./providers";
 export const metadata: Metadata = {
   title: 'ReWear',
   description: 'Rewear - Your online marketplace for second-hand fashion.',
+  viewport: 'width=device-width, initial-scale=1',
 };
 
 const inter = Inter({ subsets: ["latin"] });

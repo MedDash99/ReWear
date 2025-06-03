@@ -15,24 +15,52 @@ export default function OverviewDashboardPage() {
   return (
     // No <main> tag needed here, as the layout provides it.
     // No MinimalHeader or the main "Hello, {userName}" and role switcher buttons - they are in the layout.
-    <div className="space-y-10"> {/* Or any other root element for the overview content */}
+    <div className="space-y-6 sm:space-y-10"> {/* Or any other root element for the overview content */}
       {/* Summary Cards Specific to Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="hover:bg-teal-600 hover:text-white hover:-translate-y-1 transition-all duration-200 cursor-pointer">
-          <CardHeader><CardTitle>Overall Purchases</CardTitle></CardHeader>
-          <CardContent>Data Here</CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base">Overall Purchases</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-xs sm:text-sm">Data Here</p>
+          </CardContent>
         </Card>
         <Card className="hover:bg-teal-600 hover:text-white hover:-translate-y-1 transition-all duration-200 cursor-pointer">
-          <CardHeader><CardTitle>Overall Listings</CardTitle></CardHeader>
-          <CardContent>Data Here</CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base">Overall Listings</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-xs sm:text-sm">Data Here</p>
+          </CardContent>
+        </Card>
+        <Card className="hover:bg-teal-600 hover:text-white hover:-translate-y-1 transition-all duration-200 cursor-pointer">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base">Total Sales</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-xs sm:text-sm">Data Here</p>
+          </CardContent>
+        </Card>
+        <Card className="hover:bg-teal-600 hover:text-white hover:-translate-y-1 transition-all duration-200 cursor-pointer">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base">Messages</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-xs sm:text-sm">Data Here</p>
+          </CardContent>
         </Card>
         {/* ... other overview-specific summary cards ... */}
       </div>
 
       {/* Action Buttons Specific to Overview */}
-      <div className="flex flex-wrap justify-center gap-4">
-        <Button variant="outline" className="hover:bg-black hover:text-white transition-colors">Browse All Items</Button>
-        <Button variant="outline" className="hover:bg-black hover:text-white transition-colors">View Recent Activity</Button>
+      <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4">
+        <Button variant="outline" className="hover:bg-black hover:text-white transition-colors text-sm sm:text-base">
+          Browse All Items
+        </Button>
+        <Button variant="outline" className="hover:bg-black hover:text-white transition-colors text-sm sm:text-base">
+          View Recent Activity
+        </Button>
         {/* ... other overview-specific action buttons ... */}
       </div>
 
@@ -40,13 +68,19 @@ export default function OverviewDashboardPage() {
 
       {/* Section: Recent Orders (Example - could be on overview) */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Recent Orders Summary</h2>
+        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Recent Orders Summary</h2>
+        <div className="bg-gray-50 rounded-lg p-4 text-center">
+          <p className="text-sm sm:text-base text-gray-600">No recent orders to display</p>
+        </div>
         {/* ... content for recent orders ... */}
       </div>
 
       {/* Section: Messages Summary (Example - could be on overview) */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Messages Overview</h2>
+        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Messages Overview</h2>
+        <div className="bg-gray-50 rounded-lg p-4 text-center">
+          <p className="text-sm sm:text-base text-gray-600">No new messages</p>
+        </div>
         {/* ... content for messages overview ... */}
       </div>
     </div>

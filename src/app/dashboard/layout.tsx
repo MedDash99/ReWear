@@ -28,42 +28,47 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [pathname]);
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-10 space-y-8">
+    <main className="max-w-5xl mx-auto px-4 py-6 sm:py-10 space-y-6 sm:space-y-8">
       <MinimalHeader />
       <div className="text-center">
-        <h1 className="text-3xl font-bold">Hello, {userName}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Hello, {userName}</h1>
         <div className="flex justify-center mt-4">
-          <div className="inline-flex items-center bg-muted rounded-full p-1">
+          <div className="inline-flex items-center bg-muted rounded-full p-1 w-full max-w-md sm:w-auto overflow-x-auto">
             {/* Seller Button - CORRECTED HREF */}
             <Link href="/dashboard/seller/dashboard" passHref>
               <button
-                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-all text-sm whitespace-nowrap ${
                   activeView === "seller" ? "bg-white shadow text-foreground font-semibold" : "text-muted-foreground"
                 }`}
               >
-                <Store className="h-4 w-4 text-orange-500" /> Seller
+                <Store className="h-4 w-4 text-orange-500" /> 
+                <span className="hidden xs:inline">Seller</span>
+                <span className="xs:hidden">Sell</span>
               </button>
             </Link>
 
             {/* Overview Button (links to the main dashboard page) */}
             <Link href="/dashboard" passHref>
               <button
-                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-all text-sm whitespace-nowrap ${
                   activeView === "overview" ? "bg-white shadow text-foreground font-semibold" : "text-muted-foreground"
                 }`}
               >
-                <LayoutDashboard className="h-4 w-4" /> Overview
+                <LayoutDashboard className="h-4 w-4" /> 
+                <span>Overview</span>
               </button>
             </Link>
 
             {/* Buyer Button - CORRECTED HREF */}
             <Link href="/dashboard/buyer/dashboard" passHref>
               <button
-                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-all text-sm whitespace-nowrap ${
                   activeView === "buyer" ? "bg-white shadow text-foreground font-semibold" : "text-muted-foreground"
                 }`}
               >
-                <ShoppingBag className="h-4 w-4" /> Buyer
+                <ShoppingBag className="h-4 w-4" /> 
+                <span className="hidden xs:inline">Buyer</span>
+                <span className="xs:hidden">Buy</span>
               </button>
             </Link>
           </div>

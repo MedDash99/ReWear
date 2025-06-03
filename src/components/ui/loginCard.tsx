@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label"
 import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -134,20 +134,20 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
   return (
     // Using fixed positioning and background overlay from LoginCard
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md shadow-2xl rounded-2xl p-6 relative">
+      <Card className="w-full max-w-sm sm:max-w-md shadow-2xl rounded-2xl p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">
         {/* Close button from LoginCard */}
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-700 disabled:opacity-50 z-10"
             aria-label="Close"
             disabled={isLoading}
           >
             <X className="h-5 w-5" />
           </button>
         )}
-        <CardContent className="space-y-6">
-          <h2 className="text-2xl font-bold text-center">
+        <CardContent className="space-y-4 sm:space-y-6 p-0">
+          <h2 className="text-xl sm:text-2xl font-bold text-center pt-2">
             {isLogin ? "Login" : "Sign Up"}
           </h2>
 
@@ -158,10 +158,10 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: isLogin ? 20 : -20 }} // Added subtle y animation
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="space-y-4"
+              className="space-y-3 sm:space-y-4"
             >
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -170,12 +170,13 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading} // Disable input when loading
                   autoComplete="email"
+                  className="mt-1"
                 />
               </div>
 
               {!isLogin && (
                 <div>
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="username" className="text-sm">Username</Label>
                   <Input
                     id="username"
                     type="text"
@@ -184,12 +185,13 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                     onChange={(e) => setUsername(e.target.value)}
                     disabled={isLoading}
                     autoComplete="username"
+                    className="mt-1"
                   />
                 </div>
               )}
 
               <div>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-sm">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -198,12 +200,13 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading} // Disable input when loading
                   autoComplete={isLogin ? "current-password" : "new-password"}
+                  className="mt-1"
                 />
               </div>
 
               {!isLogin && ( // Show Confirm Password only on Sign Up
                 <div>
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-sm">Confirm Password</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -212,6 +215,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isLoading} // Disable input when loading
                     autoComplete="new-password"
+                    className="mt-1"
                   />
                 </div>
               )}
@@ -225,12 +229,12 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                       onCheckedChange={() => setRememberMe(!rememberMe)}
                       disabled={isLoading} // Disable checkbox when loading
                     />
-                    <Label htmlFor="remember-me" className="text-sm">
+                    <Label htmlFor="remember-me" className="text-xs sm:text-sm">
                       Remember me
                     </Label>
                   </div>
                   <button
-                    className="text-sm text-blue-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="text-xs sm:text-sm text-blue-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isLoading}
                   >
                     Forgot password?
@@ -239,7 +243,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
               )}
 
               <Button
-                className="w-full"
+                className="w-full py-2.5"
                 onClick={handleSubmit}
                 disabled={isLoading} // Disable button when loading
               >
@@ -254,20 +258,22 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
 
               <div className="flex items-center justify-center gap-2">
                 <hr className="flex-grow border-gray-300" /> {/* Added line */}
-                <span className="text-sm text-gray-500">or</span>
+                <span className="text-xs sm:text-sm text-gray-500">or</span>
                 <hr className="flex-grow border-gray-300" /> {/* Added line */}
               </div>
 
               <Button
                 variant="outline"
-                className="w-full flex items-center justify-center gap-2"
+                className="w-full flex items-center justify-center gap-2 py-2.5"
                 onClick={handleGoogleLogin}
                 disabled={isLoading} // Disable button when loading
               >
-                <FcGoogle size={20} /> Continue with Google
+                <FcGoogle size={20} /> 
+                <span className="hidden sm:inline">Continue with Google</span>
+                <span className="sm:hidden">Google</span>
               </Button>
 
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-xs sm:text-sm text-gray-600">
                 {isLogin ? (
                   <span>
                     Don't have an account?{" "}

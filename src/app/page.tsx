@@ -98,12 +98,13 @@ export default function StoreLandingPage() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
-      <main className="w-full max-w-screen-xl mx-auto p-2 flex-grow">
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow">
         {/* Category Filters */}
-        <div className="flex flex-wrap gap-2 mb-6 justify-center">
+        <div className="flex flex-wrap gap-3 mb-8 justify-center">
           <Button
             variant={selectedCategory === null ? "default" : "outline"}
             onClick={() => setSelectedCategory(null)}
+            className="text-sm px-4 py-2.5 min-w-[80px]"
           >
             All
           </Button>
@@ -112,6 +113,7 @@ export default function StoreLandingPage() {
               variant={selectedCategory === category ? "default" : "outline"}
               key={category}
               onClick={() => handleCategoryClick(category)}
+              className="text-sm px-4 py-2.5 min-w-[80px]"
             >
               {category}
             </Button>
@@ -121,12 +123,22 @@ export default function StoreLandingPage() {
         {isLoading && <div className="text-center py-10"><p>Loading items...</p></div>}
         {error && <div className="text-center py-10 text-red-500"><p>Error: {error}</p></div>}
 
-        {/* Items Grid - Now uses ContentCard */}
+        {/* Items Grid - Optimized for larger cards on desktop */}
         {!isLoading && !error && filteredItems.length > 0 ? (
           <div className="
           grid
-          grid-cols-[repeat(auto-fill,minmax(240px,1fr))]
-          gap-2
+          grid-cols-1
+          xs:grid-cols-2
+          sm:grid-cols-2
+          md:grid-cols-3
+          lg:grid-cols-4
+          xl:grid-cols-4
+          2xl:grid-cols-5
+          gap-4
+          sm:gap-6
+          lg:gap-8
+          justify-items-center
+          max-w-none
           ">
             {filteredItems.map(item => (
               <ContentCard 

@@ -3,18 +3,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import Card from '@mui/material/Card';
-import CardActionArea from '@mui/material/CardActionArea';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import Typography from '@mui/material/Typography';
-import Avatar from '@mui/material/Avatar';
-import Chip from '@mui/material/Chip';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import BrokenImageIcon from '@mui/icons-material/BrokenImage';
-import { styled, Theme, alpha } from '@mui/material/styles';
+import { Heart, ImageIcon } from 'lucide-react';
 
 // Define the type for the item prop
 type Item = {
@@ -39,67 +28,6 @@ interface ContentCardProps {
   onLoginRequired?: () => void;
 }
 
-// Card container
-const StyledCard = styled(Card)(({ theme }: { theme: Theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  maxWidth: 260,
-  height: '100%',
-  borderRadius: theme.shape.borderRadius * 2,
-  backgroundColor: theme.palette.common.white,
-  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: theme.shadows[6],
-  },
-}));
-
-// Image wrapper for square aspect ratio
-const ImageContainer = styled(Box)(({ theme }: { theme: Theme }) => ({
-  position: 'relative',
-  width: '100%',
-  paddingTop: '100%',
-  overflow: 'hidden',
-  backgroundColor: theme.palette.grey[200],
-}));
-
-// Media fits container
-const StyledCardMedia = styled(CardMedia)({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-}) as typeof CardMedia;
-
-// Favorite (heart) overlay button
-const OverlayButton = styled(IconButton)(({ theme }: { theme: Theme }) => ({
-  position: 'absolute',
-  top: theme.spacing(1),
-  right: theme.spacing(1),
-  backgroundColor: alpha(theme.palette.common.white, 0.7),
-  backdropFilter: 'blur(4px)',
-  padding: theme.spacing(0.5),
-  '&:hover': {
-    backgroundColor: alpha(theme.palette.common.white, 0.9),
-  },
-  '& .MuiSvgIcon-root': {
-    fontSize: '1.25rem',
-  },
-}));
-
-// Price badge overlay
-const PriceBadge = styled(Box)(({ theme }: { theme: Theme }) => ({
-  position: 'absolute',
-  bottom: theme.spacing(1),
-  left: theme.spacing(1),
-  backgroundColor: alpha(theme.palette.common.white, 0.9),
-  padding: theme.spacing(0.25, 1),
-  borderRadius: theme.shape.borderRadius,
-  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-}));
-
 const ContentCard: React.FC<ContentCardProps> = ({ item, isAuthenticated, onLoginRequired }) => {
   const router = useRouter();
   const [imageError, setImageError] = React.useState(false);
@@ -108,7 +36,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, isAuthenticated, onLogi
     // Check if clicked element is specifically the favorite button or inside it
     const target = e.target as HTMLElement;
     const isFavoriteButton = target.closest('[aria-label="Favorite"]') || 
-                            target.closest('.MuiIconButton-root') ||
+                            target.closest('button[data-favorite="true"]') ||
                             target.tagName === 'svg' ||
                             target.closest('svg');
     
@@ -144,89 +72,77 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, isAuthenticated, onLogi
   const handleImageError = () => setImageError(true);
 
   return (
-    <StyledCard>
-      <CardActionArea
-        onClick={handleCardClick}
-        sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
-      >
-        <ImageContainer>
-          {!imageError ? (
-            <StyledCardMedia
-              image={item.imageUrl}
-              title={item.name}
-              onError={handleImageError}
-            />
-          ) : (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'text.secondary',
-              }}
-            >
-              <BrokenImageIcon fontSize="large" />
-            </Box>
-          )}
+    <div 
+      className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1 cursor-pointer overflow-hidden flex flex-col w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[280px] xl:max-w-[300px] mx-auto"
+      onClick={handleCardClick}
+    >
+      {/* Image Container */}
+      <div className="relative w-full aspect-square overflow-hidden bg-gray-200">
+        {!imageError ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            className="w-full h-full object-cover"
+            onError={handleImageError}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
+            <ImageIcon className="w-16 h-16" />
+          </div>
+        )}
 
-          <OverlayButton onClick={handleFavoriteClick} aria-label="Favorite">
-            <FavoriteBorderIcon />
-          </OverlayButton>
-          <PriceBadge>
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: theme => theme.palette.text.primary }}>
-              ${item.price.toFixed(2)}
-            </Typography>
-          </PriceBadge>
-        </ImageContainer>
+        {/* Favorite Button Overlay */}
+        <button
+          onClick={handleFavoriteClick}
+          data-favorite="true"
+          aria-label="Favorite"
+          className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white/95 transition-colors shadow-sm"
+        >
+          <Heart className="w-5 h-5 text-gray-600 hover:text-red-500" />
+        </button>
 
-        <CardContent sx={{ p: 1.5, flexGrow: 1 }}>
-          <Typography
-            variant="subtitle1"
-            component="div"
-            sx={{
-              fontWeight: 500,
-              color: theme => theme.palette.text.primary,
-              lineHeight: 1.3,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {item.name}
-          </Typography>
-        </CardContent>
+        {/* Price Badge Overlay */}
+        <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm">
+          <span className="text-base font-bold text-gray-900">
+            ${item.price.toFixed(2)}
+          </span>
+        </div>
+      </div>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', p: 1.5, pt: 0.5 }}>
-          <Avatar sx={{ width: 24, height: 24, mr: 1 }}>
+      {/* Content */}
+      <div className="p-4 flex-grow flex flex-col">
+        <h3 className="font-medium text-gray-900 text-base leading-tight mb-3 line-clamp-2 min-h-[2.5rem]">
+          {item.name}
+        </h3>
+
+        {/* Seller Info */}
+        <div className="flex items-center mt-auto">
+          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-3 flex-shrink-0">
             {item.seller.avatarUrl ? (
               <img
                 src={item.seller.avatarUrl}
                 alt={item.seller.name || ''}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                className="w-full h-full rounded-full object-cover"
               />
             ) : (
-              getInitials(item.seller.name)
+              <span className="text-sm font-medium text-gray-600">
+                {getInitials(item.seller.name)}
+              </span>
             )}
-          </Avatar>
+          </div>
 
-          <Typography variant="caption" color="text.secondary" sx={{ flexGrow: 1, lineHeight: 1.2 }}>
-            {item.seller.name || 'Unknown Seller'}
-          </Typography>
+          <div className="flex-grow min-w-0 mr-2">
+            <span className="text-sm text-gray-500 block truncate">
+              {item.seller.name || 'Unknown Seller'}
+            </span>
+          </div>
 
-          <Chip
-            label={item.category}
-            size="small"
-            variant="outlined"
-            sx={{ ml: 1, height: 24, fontSize: '0.625rem' }}
-          />
-        </Box>
-      </CardActionArea>
-    </StyledCard>
+          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full flex-shrink-0">
+            {item.category}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -4,8 +4,9 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
-import { findUserByEmail, createUser } from "@/lib/db"; // Ensure these functions are async if they do DB ops
+import { findUserByEmail, createUser } from "@/lib/supabase"; // Updated import
 import NextAuth from "next-auth/next";
+import { DefaultSession } from "next-auth";
 
 interface User { // This is your local User interface, ensure it matches your DB functions' return type
   id: string;
@@ -21,6 +22,19 @@ interface User { // This is your local User interface, ensure it matches your DB
   phone?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+// Extend the NextAuth User type to include our custom properties
+declare module "next-auth" {
+  interface User {
+    profile_image_url?: string | null;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    profile_image_url?: string | null;
+  }
 }
 
 export const authOptions: NextAuthOptions = {
@@ -133,7 +147,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user && token.sub) { // Ensure token.sub exists
         session.user.id = token.sub as string; // This token.sub should be your database UUID
         session.user.name = token.name as string;
-        session.user.profile_image_url = token.profile_image_url as string;
+        (session.user as any).profile_image_url = token.profile_image_url as string;
         console.log(`[session callback] session.user.id is now set to: ${session.user.id} (Type: ${typeof session.user.id})`);
       }
       return session;
