@@ -4,7 +4,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
-import { findUserByEmail, createUser } from "@/lib/supabase"; // Updated import
+import { findUserByEmail, createUser } from "@/lib/database"; // Updated import
 import NextAuth from "next-auth/next";
 import { DefaultSession } from "next-auth";
 

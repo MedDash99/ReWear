@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase'; // Updated import
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET(request: Request) {
   try {
     console.log('Fetching users from Supabase...');
+    
+    const supabase = await createClient();
 
     // Use Supabase to query users
     const { data: users, error } = await supabase

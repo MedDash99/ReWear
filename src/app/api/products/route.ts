@@ -1,6 +1,6 @@
 // src/app/api/products/route.ts
 import { NextResponse } from 'next/server';
-import { getDB } from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
@@ -28,7 +28,7 @@ export async function POST(request: Request) { // Or NextRequest
     return NextResponse.json({ message: "Not authenticated. Please log in." }, { status: 401 });
   }
 
-  const sellerIdFromSession = session.user.id as string | number;
+  const sellerIdFromSession = session.user.id as string;
   console.log('[API create product] sellerIdFromSession FROM session.user.id:', sellerIdFromSession, '(Type:', typeof sellerIdFromSession, ')');
 
   // Check if the ID was actually found in the session.
@@ -36,8 +36,9 @@ export async function POST(request: Request) { // Or NextRequest
     console.error("User ID (sellerId) not found in session object:", session?.user);
     return NextResponse.json({ message: "Authenticated user ID missing from session data. Check NextAuth callbacks." }, { status: 500 });
   }
+  
   try {
-    const db = await getDB();
+    const supabase = await createClient();
 
     // 3. Parse the JSON payload from the request
     const body = await request.json();
@@ -67,69 +68,68 @@ export async function POST(request: Request) { // Or NextRequest
       );
     }
 
-    // 5. Log and Save item data to the SQLite database using the session-derived sellerId
+    // 5. Log and Save item data to Supabase using the session-derived sellerId
     console.log('Attempting to insert item with values:', {
       name,
       description,
-      price: numericPrice, // Use the validated numeric price
+      price: numericPrice,
       category,
-      imageUrl,
-      cloudinaryPublicId,
-      sellerId: sellerIdFromSession // ✨ Use the ID from the session here
+      image_url: imageUrl, // Note: using snake_case for Supabase
+      cloudinary_public_id: cloudinaryPublicId, // Note: using snake_case for Supabase
+      seller_id: sellerIdFromSession // Note: using snake_case for Supabase
     });
 
-    const insertStmt = await db.prepare(`
-      INSERT INTO items (name, description, price, category, imageUrl, cloudinaryPublicId, sellerId)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
+    const { data: newItem, error: insertError } = await supabase
+      .from('items')
+      .insert({
+        name,
+        description,
+        price: numericPrice,
+        category,
+        image_url: imageUrl,
+        cloudinary_public_id: cloudinaryPublicId,
+        seller_id: sellerIdFromSession,
+        status: 'Active'
+      })
+      .select(`
+        id,
+        name,
+        description,
+        price,
+        image_url,
+        category,
+        cloudinary_public_id,
+        users:seller_id (
+          name,
+          profile_image_url
+        )
+      `)
+      .single();
 
-    // Execute the insert statement
-    const info = await insertStmt.run(
-      name,
-      description,
-      numericPrice, // Use the validated numeric price
-      category,
-      imageUrl,
-      cloudinaryPublicId,
-      sellerIdFromSession // ✨ Use the ID from the session here
-    );
-
-    const newItemId = info.lastInsertRowid;
-    if (!newItemId) {
-      console.error("Database insert failed or did not return a lastInsertRowid.", info);
-      return NextResponse.json({ message: "Failed to save the item to the database." }, { status: 500 });
+    if (insertError) {
+      console.error("Database insert failed:", insertError);
+      return NextResponse.json({ message: "Failed to save the item to the database.", error: insertError.message }, { status: 500 });
     }
 
-    // 6. Fetch the newly created item along with seller info (your existing logic)
-    const selectNewItemStmt = await db.prepare(
-      'SELECT i.id, i.name, i.description, i.price, i.imageUrl, i.category, i.cloudinaryPublicId, ' +
-      'u.name as sellerName, u.profile_image_url as sellerAvatarUrl ' + // Ensure 'u.profile_image_url' is correct
-      'FROM items i JOIN users u ON i.sellerId = u.id ' +
-      'WHERE i.id = ?'
-    );
-
-    const newItemFromDb: any = await selectNewItemStmt.get(newItemId);
-
-    if (!newItemFromDb) {
-      console.error(`Failed to retrieve item with ID ${newItemId} after insert.`);
-      return NextResponse.json({ message: `Item created with ID ${newItemId}, but failed to retrieve confirmation details.` }, { status: 207 });
+    if (!newItem) {
+      console.error("No item returned after insert");
+      return NextResponse.json({ message: "Failed to retrieve item after creation." }, { status: 500 });
     }
 
-    // Structure the response (your existing logic)
-    const responseItem: Item = { // Using the Item type for the response
-      id: newItemFromDb.id,
-      name: newItemFromDb.name,
-      description: newItemFromDb.description,
-      price: Number(newItemFromDb.price), // Ensure price is a number in the response
-      imageUrl: newItemFromDb.imageUrl,
-      category: newItemFromDb.category,
-      cloudinaryPublicId: newItemFromDb.cloudinaryPublicId,
+    // Structure the response
+    const responseItem: Item = {
+      id: newItem.id,
+      name: newItem.name,
+      description: newItem.description,
+      price: Number(newItem.price),
+      imageUrl: newItem.image_url,
+      category: newItem.category,
+      cloudinaryPublicId: newItem.cloudinary_public_id,
       seller: {
-        name: newItemFromDb.sellerName,
-        avatarUrl: newItemFromDb.sellerAvatarUrl,
+        name: (newItem.users as any)?.name || 'Unknown',
+        avatarUrl: (newItem.users as any)?.profile_image_url || null,
       },
     };
-    // The aliased fields like sellerName are now part of the nested seller object, so no need to delete.
 
     return NextResponse.json(responseItem, { status: 201 });
 
@@ -138,36 +138,52 @@ export async function POST(request: Request) { // Or NextRequest
     if (error instanceof SyntaxError && error.message.toLowerCase().includes("json")) {
       return NextResponse.json({ message: "Invalid JSON payload provided.", details: error.message }, { status: 400 });
     }
-    // You might want to add more specific error handling for database errors if needed
     return NextResponse.json({ message: "Failed to create product due to an internal server error.", details: error.message }, { status: 500 });
   }
 }
 
 export async function GET(request: Request) {
   try {
-    const db = await getDB();
+    const supabase = await createClient();
     
     // Fetch ALL products from ALL sellers for browsing
-    const items = await db.prepare(
-      'SELECT i.id, i.name, i.description, i.price, i.imageUrl, i.category, i.cloudinaryPublicId, ' +
-      'u.name as sellerName, u.profile_image_url as sellerAvatarUrl ' +
-      'FROM items i JOIN users u ON i.sellerId = u.id ' +
-      'ORDER BY i.id DESC' // Show newest items first
-    ).all();
+    const { data: items, error } = await supabase
+      .from('items')
+      .select(`
+        id,
+        name,
+        description,
+        price,
+        image_url,
+        category,
+        cloudinary_public_id,
+        seller_id,
+        users:seller_id (
+          name,
+          profile_image_url
+        )
+      `)
+      .eq('status', 'Active')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching products:", error);
+      return NextResponse.json({ message: 'Failed to fetch products', error: error.message }, { status: 500 });
+    }
 
     // Map DB rows to Item type
-    const responseItems = items.map((item: any) => ({
+    const responseItems = (items || []).map((item: any) => ({
       id: item.id,
       name: item.name,
       description: item.description,
       price: Number(item.price),
-      imageUrl: item.imageUrl,
+      imageUrl: item.image_url,
       category: item.category,
-      cloudinaryPublicId: item.cloudinaryPublicId,
-      sellerId: item.sellerId, // Include sellerId for reference
+      cloudinaryPublicId: item.cloudinary_public_id,
+      sellerId: item.seller_id,
       seller: {
-        name: item.sellerName,
-        avatarUrl: item.sellerAvatarUrl,
+        name: item.users?.name || 'Unknown',
+        avatarUrl: item.users?.profile_image_url || null,
       },
     }));
 
