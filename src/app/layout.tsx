@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
 import Providers from "./providers";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 // No Header/Logo imports here
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* Add min-h-screen and flex setup for potential sticky footer */}
       <body className="flex flex-col min-h-screen">
         <Providers>
+          <SpeedInsights />
           {/* No header is rendered globally by the layout */}
           {/* Pages themselves will render their required header */}
           <main className="flex-grow"> {/* flex-grow allows main content to fill space */}
