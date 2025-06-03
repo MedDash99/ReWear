@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 // import MinimalHeader from '@/components/ui/minimalHeader'; // REMOVE THIS IMPORT if not used elsewhere in this file
 
 // Define types for data
@@ -20,10 +21,26 @@ interface SavedItem {
   price: number; 
 }
 
+interface Offer {
+  id: string;
+  offer_price: number;
+  message: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  product_id: number;
+  product_name: string;
+  product_price: number;
+  product_image: string;
+  seller_name: string;
+}
+
 const BuyerDashboard: React.FC = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [loadingOffers, setLoadingOffers] = useState(true);
 
   // --- Placeholder Data --- 
   const currentOrders: Order[] = [
@@ -38,6 +55,50 @@ const BuyerDashboard: React.FC = () => {
     'Message from SellerX regarding order #123',
     'Price drop on Wishlist Item 1!',
   ];
+
+  // Fetch offers
+  useEffect(() => {
+    if (session?.user) {
+      fetchOffers();
+    }
+  }, [session]);
+
+  const fetchOffers = async () => {
+    try {
+      setLoadingOffers(true);
+      const response = await fetch('/api/offers');
+      if (!response.ok) throw new Error('Failed to fetch offers');
+      const data = await response.json();
+      setOffers(data);
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+      toast.error('Failed to load offers');
+    } finally {
+      setLoadingOffers(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return { backgroundColor: '#d4edda', color: '#155724' };
+      case 'rejected':
+        return { backgroundColor: '#f8d7da', color: '#721c24' };
+      default:
+        return { backgroundColor: '#fff3cd', color: '#856404' };
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return 'Accepted';
+      case 'rejected':
+        return 'Rejected';
+      default:
+        return 'Pending';
+    }
+  };
 
   // --- Handlers --- 
   const handleEditProfile = () => {
@@ -64,6 +125,9 @@ const BuyerDashboard: React.FC = () => {
   const handleViewFAQ = () => {
     console.log('Navigate to FAQ page');
     // router.push('/faq');
+  };
+  const handleViewProduct = (productId: number) => {
+    router.push(`/products/${productId}`);
   };
 
   // --- Authentication Check and Redirect --- 
@@ -187,6 +251,97 @@ const BuyerDashboard: React.FC = () => {
           )}
         </section>
       </div>
+
+      {/* My Offers Section */}
+      <section style={sectionStyle}>
+        <h3 style={{ marginTop: '0', marginBottom: '15px', fontSize: '18px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>My Offers</h3>
+        {loadingOffers ? (
+          <p>Loading offers...</p>
+        ) : offers.length > 0 ? (
+          <div style={{ display: 'grid', gap: '15px' }}>
+            {offers.map((offer) => (
+              <div key={offer.id} style={{ 
+                border: '1px solid #eee', 
+                borderRadius: '8px', 
+                padding: '15px',
+                display: 'flex',
+                gap: '15px',
+                alignItems: 'center'
+              }}>
+                <img 
+                  src={offer.product_image} 
+                  alt={offer.product_name}
+                  style={{ 
+                    width: '60px', 
+                    height: '60px', 
+                    borderRadius: '4px', 
+                    objectFit: 'cover' 
+                  }}
+                />
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: '0 0 5px 0', fontSize: '16px' }}>{offer.product_name}</h4>
+                  <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
+                    Seller: {offer.seller_name}
+                  </p>
+                  <p style={{ margin: '5px 0', fontSize: '14px' }}>
+                    <span style={{ fontWeight: 'bold' }}>My Offer: ${offer.offer_price.toFixed(2)}</span>
+                    <span style={{ marginLeft: '10px', color: '#666' }}>
+                      (Original: ${offer.product_price.toFixed(2)})
+                    </span>
+                  </p>
+                  {offer.message && (
+                    <p style={{ margin: '5px 0', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>
+                      "{offer.message}"
+                    </p>
+                  )}
+                  <p style={{ margin: '5px 0', fontSize: '12px', color: '#666' }}>
+                    Offered on: {new Date(offer.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+                  <span style={{
+                    ...getStatusColor(offer.status),
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    {getStatusText(offer.status)}
+                  </span>
+                  <button 
+                    onClick={() => handleViewProduct(offer.product_id)}
+                    style={{
+                      ...buttonStyle, 
+                      backgroundColor: 'transparent', 
+                      border: 'none', 
+                      color: '#4CAF50', 
+                      padding: '5px', 
+                      textDecoration: 'underline',
+                      fontSize: '12px'
+                    }}
+                  >
+                    View Product
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No offers made yet. <button 
+            onClick={() => router.push('/')} 
+            style={{
+              ...buttonStyle, 
+              backgroundColor: 'transparent', 
+              border: 'none', 
+              color: '#4CAF50', 
+              padding: '0', 
+              textDecoration: 'underline'
+            }}
+          >
+            Browse products to make offers!
+          </button></p>
+        )}
+      </section>
 
       {/* Notifications */}
       <section style={sectionStyle}>

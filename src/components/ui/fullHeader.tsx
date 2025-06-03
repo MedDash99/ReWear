@@ -13,11 +13,39 @@ interface HeaderProps {
   onSignUpClick?: () => void;
 }
 
+interface UserData {
+  id: string;
+  name: string | null;
+  email: string;
+  profile_image_url: string | null;
+}
+
 const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInClick, onSignUpClick }) => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State for dropdown visibility
   const dropdownRef = useRef<HTMLDivElement>(null); // Ref to detect clicks outside
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    async function fetchUserData() {
+      if (status === 'authenticated') {
+        try {
+          const response = await fetch('/api/user');
+          if (response.ok) {
+            const data = await response.json();
+            setUserData(data);
+          } else {
+            console.error('Failed to fetch user data');
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      }
+    }
+
+    fetchUserData();
+  }, [status]);
 
   const handleLogout = async () => {
     setIsDropdownOpen(false); // Close dropdown on logout
@@ -36,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
     if (onSignUpClick) {
       onSignUpClick();
     } else {
-      signIn(undefined, { callbackUrl: '/' }); // Standard sign-in can handle new users
+      signIn(undefined, { callbackUrl: '/' });
     }
   };
 
@@ -110,7 +138,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                 aria-haspopup="true"
                 aria-expanded={isDropdownOpen}
               >
-                Hi, {session.user?.name?.split(' ')[0] || 'User'}!
+                Hi, {userData?.name || session.user?.name?.split(' ')[0] || 'User'}!
                 {/* Simple arrow indicator */}
                 <svg className={`w-4 h-4 ml-1 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
               </button>

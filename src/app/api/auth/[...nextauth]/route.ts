@@ -65,7 +65,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
-          // You can add other fields here if needed by your jwt/session callbacks
+          profile_image_url: user.profile_image_url
         };
       }
     })
@@ -121,9 +121,8 @@ export const authOptions: NextAuthOptions = {
       if (user) { // The 'user' object is only passed on initial sign-in
         console.log(`[jwt callback] Received user object with user.id: ${user.id} (Type: ${typeof user.id})`);
         token.sub = user.id; // user.id here should be your database UUID from signIn or authorize
-        // You can also add other user properties to the token if needed
-        // token.name = user.name;
-        // token.email = user.email;
+        token.name = user.name;
+        token.profile_image_url = user.profile_image_url;
         console.log(`[jwt callback] token.sub is now set to: ${token.sub} (Type: ${typeof token.sub})`);
       }
       return token;
@@ -132,10 +131,9 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) { // session callback correctly placed inside 'callbacks'
       console.log(`[session callback] Received token with token.sub: ${token.sub} (Type: ${typeof token.sub})`);
       if (session.user && token.sub) { // Ensure token.sub exists
-        session.user.id = token.sub; // This token.sub should be your database UUID
-        // If you added other properties to the token in the jwt callback, pass them to the session here:
-        // session.user.name = token.name as string;
-        // session.user.email = token.email as string;
+        session.user.id = token.sub as string; // This token.sub should be your database UUID
+        session.user.name = token.name as string;
+        session.user.profile_image_url = token.profile_image_url as string;
         console.log(`[session callback] session.user.id is now set to: ${session.user.id} (Type: ${typeof session.user.id})`);
       }
       return session;
@@ -147,7 +145,8 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development", // Enable debug messages in development
   pages: {
-    signIn: "/", // Or your custom sign-in page, e.g., '/auth/signin'
+    signIn: "/auth/signin",
+    error: "/auth/error",
   },
 };
 

@@ -35,6 +35,8 @@ type Item = {
 
 interface ContentCardProps {
   item: Item;
+  isAuthenticated?: boolean;
+  onLoginRequired?: () => void;
 }
 
 // Card container
@@ -98,18 +100,36 @@ const PriceBadge = styled(Box)(({ theme }: { theme: Theme }) => ({
   boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
 }));
 
-const ContentCard: React.FC<ContentCardProps> = ({ item }) => {
+const ContentCard: React.FC<ContentCardProps> = ({ item, isAuthenticated, onLoginRequired }) => {
   const router = useRouter();
   const [imageError, setImageError] = React.useState(false);
 
   const handleCardClick = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('button')) return;
-    router.push(`/item/${item.id}`);
+    // Check if clicked element is specifically the favorite button or inside it
+    const target = e.target as HTMLElement;
+    const isFavoriteButton = target.closest('[aria-label="Favorite"]') || 
+                            target.closest('.MuiIconButton-root') ||
+                            target.tagName === 'svg' ||
+                            target.closest('svg');
+    
+    if (isFavoriteButton) {
+      return;
+    }
+    
+    // Check authentication status
+    if (!isAuthenticated) {
+      // Show login modal for unauthenticated users
+      onLoginRequired?.();
+      return;
+    }
+    
+    // Redirect authenticated users to product page
+    router.push(`/products/${item.id}`);
   };
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(`Toggled favorite for item ${item.id}`);
+    e.preventDefault();
     // TODO: implement favorite logic
   };
 

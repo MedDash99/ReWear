@@ -44,11 +44,15 @@ function initializeDB(): BetterSqlite3Database { // Ensure this function returns
       category TEXT,
       imageUrl TEXT,
       cloudinaryPublicId TEXT,
+      status TEXT DEFAULT 'Active' CHECK (status IN ('Active', 'Sold', 'Draft')),
       sellerId TEXT NOT NULL, 
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (sellerId) REFERENCES users(id)
     );
+
+    -- Add status column if it doesn't exist (for existing databases)
+    PRAGMA table_info(items);
 
     -- 3. listings table
     CREATE TABLE IF NOT EXISTS listings (
@@ -108,7 +112,31 @@ function initializeDB(): BetterSqlite3Database { // Ensure this function returns
       FOREIGN KEY (reviewee_id) REFERENCES users(id),
       FOREIGN KEY (order_id) REFERENCES orders(id)
     );
+
+    -- 7. offers table
+    CREATE TABLE IF NOT EXISTS offers (
+      id TEXT PRIMARY KEY,
+      product_id INTEGER NOT NULL,
+      buyer_id TEXT NOT NULL,
+      offer_price REAL NOT NULL,
+      message TEXT,
+      status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES items(id),
+      FOREIGN KEY (buyer_id) REFERENCES users(id)
+    );
   `); // End of db.exec
+
+  // Check if status column exists and add it if it doesn't
+  const tableInfo = db.pragma('table_info(items)');
+  const statusColumnExists = tableInfo.some((column: any) => column.name === 'status');
+  
+  if (!statusColumnExists) {
+    console.log('Adding status column to existing items table...');
+    db.exec(`ALTER TABLE items ADD COLUMN status TEXT DEFAULT 'Active' CHECK (status IN ('Active', 'Sold', 'Draft'))`);
+  }
+
   return db; // Return the initialized database instance
 } // <<< THIS WAS THE LIKELY MISSING CLOSING BRACE FOR initializeDB()
 

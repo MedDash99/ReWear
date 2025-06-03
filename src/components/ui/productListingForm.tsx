@@ -1,72 +1,90 @@
 "use client"; // This remains a client component
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CldUploadButton, CloudinaryUploadWidgetResults } from 'next-cloudinary';
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useSession } from "next-auth/react";
 // To use useRouter for redirection after success, uncomment the next line
 // import { useRouter } from 'next/navigation';
 
 // Interface defining the structure for storing Cloudinary image info
 interface CloudinaryImageState {
-  id: string; // asset_id or public_id from Cloudinary
-  src: string; // secure_url from Cloudinary (this is the main URL you'll store)
-  publicId: string; // public_id from Cloudinary (useful for transformations or deletion)
-  originalFilename?: string;
-  width?: number;
-  height?: number;
+  id: string; // asset_id or public_id from Cloudinary
+  src: string; // secure_url from Cloudinary (this is the main URL you'll store)
+  publicId: string; // public_id from Cloudinary (useful for transformations or deletion)
+  originalFilename?: string;
+  width?: number;
+  height?: number;
 }
 
 interface ProductListingFormProps {
-  // You can define props here if needed in the future, e.g., for editing an existing product
+  // You can define props here if needed in the future, e.g., for editing an existing product
 }
 
 const ProductListingForm: React.FC<ProductListingFormProps> = () => {
-  const [title, setTitle] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
-  const [category, setCategory] = useState<string>('');
-  const [price, setPrice] = useState<string>(''); // Stored as string from input, parsed on submit
-  const [images, setImages] = useState<CloudinaryImageState[]>([]); // Array to hold Cloudinary image states
+  const [title, setTitle] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [category, setCategory] = useState<string>('');
+  const [price, setPrice] = useState<string>(''); // Stored as string from input, parsed on submit
+  const [images, setImages] = useState<CloudinaryImageState[]>([]); // Array to hold Cloudinary image states
+  const { data: session, status } = useSession();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Optional: if you use useRouter for redirection
-  // const router = useRouter();
+  // Optional: if you use useRouter for redirection after success, uncomment the next line
+  // const router = useRouter();
 
-  const handleUploadSuccess = (results: CloudinaryUploadWidgetResults) => {
-    if (results.event === 'success' && results.info && typeof results.info === 'string' === false) {
+  const handleUploadSuccess = (results: CloudinaryUploadWidgetResults) => {
+    if (results.event === 'success' && results.info && typeof results.info === 'string' === false) {
       // Ensure results.info is not a string (it's an object with image details)
       const info = results.info as any; // Cast to any to access properties, or define a more specific type
-      const newImage: CloudinaryImageState = {
-        id: info.asset_id || info.public_id,
-        src: info.secure_url,
-        publicId: info.public_id,
-        originalFilename: info.original_filename,
-        width: info.width,
-        height: info.height,
-      };
-      setImages((prevImages) => [...prevImages, newImage]); // Add to array if allowing multiple images
-      console.log('Image uploaded to Cloudinary and data captured:', newImage);
-    }
-  };
+      const newImage: CloudinaryImageState = {
+        id: info.asset_id || info.public_id,
+        src: info.secure_url,
+        publicId: info.public_id,
+        originalFilename: info.original_filename,
+        width: info.width,
+        height: info.height,
+      };
+      setImages((prevImages) => [...prevImages, newImage]); // Add to array if allowing multiple images
+      console.log('Image uploaded to Cloudinary and data captured:', newImage);
+    }
+  };
 
-  const removeImage = (publicIdToRemove: string) => {
-    setImages(prevImages => prevImages.filter(img => img.publicId !== publicIdToRemove));
-    // Note: This only removes the image from the local preview.
-    // The image is already uploaded to Cloudinary. If you need to delete it from Cloudinary
-    // when a user removes it here (before form submission), you'd need a separate API call
-    // to your backend, which then calls Cloudinary's delete API. This is more advanced.
-    console.log(`Image preview for ${publicIdToRemove} removed from form.`);
-  };
+  const removeImage = (publicIdToRemove: string) => {
+    setImages(prevImages => prevImages.filter(img => img.publicId !== publicIdToRemove));
+    // Note: This only removes the image from the local preview.
+    // The image is already uploaded to Cloudinary. If you need to delete it from Cloudinary
+    // when a user removes it here (before form submission), you'd need a separate API call
+    // to your backend, which then calls Cloudinary's delete API. This is more advanced.
+    console.log(`Image preview for ${publicIdToRemove} removed from form.`);
+  };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
 
-    // Basic validation
-    if (!title || !description || !category || !price) {
-      alert('Please fill in all product details.');
-      return;
-    }
-    if (images.length === 0) {
-      alert('Please upload at least one image for the product.');
-      return;
-    }
+    // Check if user is authenticated
+    if (status !== "authenticated" || !session?.user?.id) {
+      alert('You must be logged in to create a product listing.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Basic validation
+    if (!title || !description || !category || !price) {
+      alert('Please fill in all product details.');
+      setIsSubmitting(false);
+      return;
+    }
+    if (images.length === 0) {
+      alert('Please upload at least one image for the product.');
+      setIsSubmitting(false);
+      return;
+    }
 
     // For Option A, we send JSON data to the backend.
     // Your backend API (/api/products/create) will need to be updated
@@ -74,198 +92,193 @@ const ProductListingForm: React.FC<ProductListingFormProps> = () => {
 
     // Assuming your backend is set up to handle a single primary image URL for now.
     // If your backend can handle multiple images, you can send the whole `images` array.
-    const primaryImage = images[0]; // Using the first uploaded image as the primary
+    const primaryImage = images[0]; // Using the first uploaded image as the primary
 
-    const productData = {
-      name: title, // Your backend API was expecting 'name'
-      description,
-      category,
-      price: parseFloat(price), // Convert price string to a number
-      imageUrl: primaryImage.src, // The secure URL from Cloudinary
-      cloudinaryPublicId: primaryImage.publicId, // The public ID from Cloudinary (good for later management)
-      // TODO: Get the actual sellerId from your authentication system (e.g., session)
-      sellerId: '1', // Placeholder: replace with actual authenticated seller ID
-    };
+    const productData = {
+      name: title, // Your backend API was expecting 'name'
+      description,
+      category,
+      price: parseFloat(price), // Convert price string to a number
+      imageUrl: primaryImage.src, // The secure URL from Cloudinary
+      cloudinaryPublicId: primaryImage.publicId, // The public ID from Cloudinary (good for later management)
+      sellerId: session.user.id, // Use the authenticated user's ID from the session
+    };
 
-    console.log('Submitting Product Data as JSON:', productData);
+    console.log('Submitting Product Data as JSON:', productData);
 
-    try {
-      const response = await fetch('/api/products/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json', // This is crucial for Option A
-        },
-        body: JSON.stringify(productData), // Send the data as a JSON string
-      });
+    try {
+      const response = await fetch('/api/products/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', // This is crucial for Option A
+        },
+        body: JSON.stringify(productData), // Send the data as a JSON string
+      });
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Product created successfully:', result);
-        alert('Product listing created successfully!');
-        // Reset form fields after successful submission
-        setTitle('');
-        setDescription('');
-        setCategory('');
-        setPrice('');
-        setImages([]);
-        // Optionally, redirect the user to their listings page or the new product page
-        // router.push('/dashboard/seller/listings');
-      } else {
-        const errorData = await response.json().catch(() => ({ message: "Failed to parse error response." }));
-        console.error('Failed to create product - Status:', response.status, 'Error:', errorData);
-        alert(`Error creating product: ${errorData.message || 'Unknown error. Please check the console.'}`);
-      }
-    } catch (error) {
-      console.error('An unexpected error occurred during form submission:', error);
-      alert('An unexpected error occurred. Please try again and check the console.');
-    }
-  };
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Product created successfully:', result);
+        alert('Product listing created successfully!');
+        // Reset form fields after successful submission
+        setTitle('');
+        setDescription('');
+        setCategory('');
+        setPrice('');
+        setImages([]);
+        // Optionally, redirect the user to their listings page or the new product page
+        // router.push('/dashboard/seller/listings');
+      } else {
+        const errorData = await response.json().catch(() => ({ message: "Failed to parse error response." }));
+        console.error('Failed to create product - Status:', response.status, 'Error:', errorData);
+        alert(`Error creating product: ${errorData.message || 'Unknown error. Please check the console.'}`);
+      }
+    } catch (error) {
+      console.error('An unexpected error occurred during form submission:', error);
+      alert('An unexpected error occurred. Please try again and check the console.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-  return (
-    <div style={{ maxWidth: '600px', margin: '40px auto', padding: '30px', border: '1px solid #e0e0e0', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', fontFamily: 'Arial, sans-serif' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '25px', color: '#333' }}>Create New Product Listing</h2>
-      <form onSubmit={handleSubmit}>
-        {/* Title Input */}
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="title" style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', color: '#555' }}>Title:</label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-        </div>
+  // Show loading state or redirect if not authenticated
+  if (status === "loading") {
+    return <div className="max-w-md mx-auto p-6 text-center">Loading...</div>;
+  }
 
-        {/* Description Textarea */}
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="description" style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', color: '#555' }}>Description:</label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            rows={4}
-            style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-        </div>
+  if (status === "unauthenticated") {
+    return (
+      <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-md space-y-6 md:mt-10 text-center">
+        <h2 className="text-2xl font-semibold text-teal-700">Authentication Required</h2>
+        <p className="text-gray-600">You need to be logged in to create a product listing.</p>
+        <Button className="bg-teal-600 hover:bg-teal-700" onClick={() => window.location.href = '/api/auth/signin'}>
+          Sign In
+        </Button>
+      </div>
+    );
+  }
 
-        {/* Category Input */}
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="category" style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', color: '#555' }}>Category:</label>
-          <input
-            type="text"
-            id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            required
-            style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-        </div>
-
-        {/* Price Input */}
-        <div style={{ marginBottom: '20px' }}>
-          <label htmlFor="price" style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', color: '#555' }}>Price ($):</label>
-          <input
-            type="number"
-            id="price"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            required
-            min="0.01" // Assuming price must be positive
-            step="0.01"
-            style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-        </div>
-
-        {/* Cloudinary Upload Button and Image Previews Area */}
-        <div style={{ marginBottom: '25px' }}>
-          <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold', color: '#555' }}>Product Images (up to 5):</label>
-          <CldUploadButton
-            uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET} // Ensure this var is in .env.local
-            onSuccess={handleUploadSuccess}
-            options={{
-              sources: ['local', 'url', 'camera'],
-              multiple: true, // Allows user to select multiple files
-              maxFiles: 5,    // Limits number of files
-              // Optional: configure Cloudinary's cropping widget
-              // cropping: true,
-              // croppingAspectRatio: 1, // Example: 1 for square, 16/9 for landscape
-            }}
-          >
-            <span style={{
-              padding: '10px 18px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              display: 'inline-block',
-              transition: 'background-color 0.2s ease',
-            }}
-             onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#0056b3')}
-             onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#007bff')}
+  return (
+    <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-md space-y-6 md:mt-10">
+      <h2 className="text-2xl font-semibold text-center text-teal-700">Sell Your Clothing</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Cloudinary Upload Button and Image Previews Area */}
+        <div className="space-y-4">
+          <Label>Product Images (up to 5)</Label>
+          <div className="flex justify-center">
+            <CldUploadButton
+              uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+              onSuccess={handleUploadSuccess}
+              options={{
+                sources: ['local', 'url', 'camera'],
+                multiple: true,
+                maxFiles: 5,
+              }}
             >
-              Upload Images
-            </span>
-          </CldUploadButton>
+              <div className="cursor-pointer border-2 border-dashed border-teal-300 rounded-md w-full h-40 flex items-center justify-center overflow-hidden hover:border-teal-400 transition-colors">
+                {images.length > 0 ? (
+                  <img 
+                    src={images[0].src} 
+                    alt="Primary preview" 
+                    className="object-cover h-full w-full" 
+                  />
+                ) : (
+                  <span className="text-gray-400">Upload Images</span>
+                )}
+              </div>
+            </CldUploadButton>
+          </div>
 
-          {/* Image Previews */}
-          {images.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '15px', border: '1px solid #eee', padding: '12px', borderRadius: '4px' }}>
-              {images.map((img) => (
-                <div key={img.publicId} style={{ border: '1px solid #ddd', borderRadius: '4px', position: 'relative', width: '100px', height: '100px', overflow: 'hidden', background: '#f9f9f9' }}>
-                  <img
-                    src={img.src}
-                    alt={img.originalFilename || 'Uploaded image preview'}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                  <button
-                    type="button" // Prevents form submission
-                    onClick={() => removeImage(img.publicId)}
-                    title="Remove image"
-                    style={{
-                      position: 'absolute', top: '4px', right: '4px', background: 'rgba(0, 0, 0, 0.5)',
-                      color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px',
-                      cursor: 'pointer', fontSize: '14px', lineHeight: '20px', textAlign: 'center',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'background-color 0.2s ease',
-                    }}
-                       onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 0, 0, 0.7)')}
-                       onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.5)')}
-                  >
-                    &times; {/* Multiplication sign for 'X' icon */}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          {/* Image Previews */}
+          {images.length > 0 && (
+            <div className="flex flex-wrap gap-3 p-3 border border-gray-200 rounded-md">
+              {images.map((img) => (
+                <div key={img.publicId} className="relative w-20 h-20 border border-gray-300 rounded-md overflow-hidden">
+                  <img
+                    src={img.src}
+                    alt={img.originalFilename || 'Uploaded image preview'}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(img.publicId)}
+                    className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-500 hover:bg-opacity-70 transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          style={{
-            padding: '12px 25px',
-            backgroundColor: '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            width: '100%',
-            transition: 'background-color 0.2s ease',
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#218838')}
-          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#28a745')}
-        >
-          Create Listing
-        </button>
-      </form>
-    </div>
-  );
+        {/* Title Input */}
+        <div className="space-y-2">
+          <Label htmlFor="title">Title</Label>
+          <Input 
+            id="title" 
+            placeholder="Beige Sweater"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+        </div>
+
+        {/* Description Textarea */}
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea 
+            id="description" 
+            placeholder="Soft beige ribbed sweater"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+            rows={4}
+          />
+        </div>
+
+        {/* Category Select */}
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select value={category} onValueChange={setCategory} required>
+            <SelectTrigger id="category">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Clothing">Clothing</SelectItem>
+              <SelectItem value="Shoes">Shoes</SelectItem>
+              <SelectItem value="Accessories">Accessories</SelectItem>
+              <SelectItem value="Bags">Bags</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Price Input */}
+        <div className="space-y-2">
+          <Label htmlFor="price">Price ($)</Label>
+          <Input 
+            id="price" 
+            type="number" 
+            placeholder="20"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required
+            min="0.01"
+            step="0.01"
+          />
+        </div>
+
+        {/* Submit Button */}
+        <Button 
+          type="submit" 
+          className="w-full bg-teal-600 hover:bg-teal-700"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Creating..." : "Create Listing"}
+        </Button>
+      </form>
+    </div>
+  );
 };
 
 export default ProductListingForm;

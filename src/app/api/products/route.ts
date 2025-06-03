@@ -1,3 +1,4 @@
+// src/app/api/products/route.ts
 import { NextResponse } from 'next/server';
 import { getDB } from '@/lib/db';
 import { getServerSession } from 'next-auth/next';
@@ -139,5 +140,40 @@ export async function POST(request: Request) { // Or NextRequest
     }
     // You might want to add more specific error handling for database errors if needed
     return NextResponse.json({ message: "Failed to create product due to an internal server error.", details: error.message }, { status: 500 });
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const db = await getDB();
+    
+    // Fetch ALL products from ALL sellers for browsing
+    const items = await db.prepare(
+      'SELECT i.id, i.name, i.description, i.price, i.imageUrl, i.category, i.cloudinaryPublicId, ' +
+      'u.name as sellerName, u.profile_image_url as sellerAvatarUrl ' +
+      'FROM items i JOIN users u ON i.sellerId = u.id ' +
+      'ORDER BY i.id DESC' // Show newest items first
+    ).all();
+
+    // Map DB rows to Item type
+    const responseItems = items.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: Number(item.price),
+      imageUrl: item.imageUrl,
+      category: item.category,
+      cloudinaryPublicId: item.cloudinaryPublicId,
+      sellerId: item.sellerId, // Include sellerId for reference
+      seller: {
+        name: item.sellerName,
+        avatarUrl: item.sellerAvatarUrl,
+      },
+    }));
+
+    return NextResponse.json(responseItems, { status: 200 });
+  } catch (error: any) {
+    console.error("Error fetching products:", error);
+    return NextResponse.json({ message: 'Failed to fetch products', error: error.message }, { status: 500 });
   }
 }

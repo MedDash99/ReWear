@@ -18,6 +18,7 @@ interface AuthCardProps {
 export default function AuthCard({ onClose, initialMode = "login" }: AuthCardProps) {
   const [isLogin, setIsLogin] = useState(initialMode === "login");
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState(""); // Added username state
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState(""); // Kept for signup
   const [rememberMe, setRememberMe] = useState(false);
@@ -27,6 +28,11 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
   const handleSubmit = async () => {
     setIsLoading(true);
     if (!isLogin) { // Handle Sign Up
+      if (!username.trim()) {
+        alert("Username is required.");
+        setIsLoading(false);
+        return;
+      }
       if (password !== confirmPassword) {
         alert("Passwords do not match.");
         setIsLoading(false);
@@ -44,7 +50,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
         const signUpResponse = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, username, password }), // Include username in request
         });
 
         const data = await signUpResponse.json();
@@ -122,8 +128,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
     setIsLogin(!isLogin);
     setPassword("");
     setConfirmPassword("");
-    // Optionally clear email too, or keep it
-    // setEmail("");
+    setUsername(""); // Clear username on mode switch
   };
 
   return (
@@ -164,8 +169,24 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading} // Disable input when loading
+                  autoComplete="email"
                 />
               </div>
+
+              {!isLogin && (
+                <div>
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Choose a username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={isLoading}
+                    autoComplete="username"
+                  />
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="password">Password</Label>
@@ -176,6 +197,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading} // Disable input when loading
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                 />
               </div>
 
@@ -189,6 +211,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isLoading} // Disable input when loading
+                    autoComplete="new-password"
                   />
                 </div>
               )}

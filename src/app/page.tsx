@@ -1,6 +1,7 @@
 // src/app/page.tsx
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 // Card related imports are no longer needed directly here if ContentCard handles all card UI
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,122 +15,136 @@ import ContentCard from '../components/ui/contentCard'; // <<< IMPORT THE NEW Co
 // and what your /api/products endpoint returns.
 // Consider moving this to a shared types file (e.g., src/types/index.ts)
 type Item = {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  category: string;
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: string;
   sellerId: number | string;
-  seller: {
-    name: string | null;
-    avatarUrl: string | null;
-  };
+  seller: {
+    name: string | null;
+    avatarUrl: string | null;
+  };
 };
 
 const categories = ["Clothing", "Shoes", "Accessories", "Bags"];
 
 export default function StoreLandingPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [items, setItems] = useState<Item[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: session, status } = useSession();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [items, setItems] = useState<Item[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [loginMode, setLoginMode] = useState<"login" | "signup">("login");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const isAuthenticated = !!session?.user;
 
   // useRouter is now used within ContentCard for navigation
   // const router = useRouter();
 
-  const filteredItems = items.filter((item) => {
-    const searchMatch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    const categoryMatch = selectedCategory ? item.category === selectedCategory : true;
-    return searchMatch && categoryMatch;
-  });
+  const filteredItems = items.filter((item) => {
+    const searchMatch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const categoryMatch = selectedCategory ? item.category === selectedCategory : true;
+    return searchMatch && categoryMatch;
+  });
 
-  const fetchItems = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      console.log('Fetching items from API...');
-      const response = await fetch('/api/products');
-      if (!response.ok) {
-        let errorData;
-        try { errorData = await response.json(); } catch { errorData = { message: response.statusText}}
-        throw new Error(errorData.message || 'Failed to fetch products');
-      }
-      const data: Item[] = await response.json();
-      console.log('Received items from API:', data);
-      setItems(data);
-    } catch (err) {
-      console.error('Error fetching items:', err);
-      setError((err as Error).message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const fetchItems = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      console.log('Fetching items from API...');
+      const response = await fetch('/api/products');
+      if (!response.ok) {
+        let errorData;
+        try { errorData = await response.json(); } catch { errorData = { message: response.statusText}}
+        throw new Error(errorData.message || 'Failed to fetch products');
+      }
+      const data: Item[] = await response.json();
+      console.log('Received items from API:', data);
+      setItems(data);
+    } catch (err) {
+      console.error('Error fetching items:', err);
+      setError((err as Error).message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
-  const handleCategoryClick = (category: string) => {
-    setSelectedCategory(category === selectedCategory ? null : category);
-  };
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(category === selectedCategory ? null : category);
+  };
 
   // handleItemCardClick is now handled within ContentCard.tsx
 
-  return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header
-        onSignInClick={() => setIsLoginOpen(true)}
-        onSignUpClick={() => setIsLoginOpen(true)}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
-     <main className="w-full max-w-screen-xl mx-auto p-2 flex-grow">
-        {/* Category Filters */}
-        <div className="flex flex-wrap gap-2 mb-6 justify-center">
-          <Button
-            variant={selectedCategory === null ? "default" : "outline"}
-            onClick={() => setSelectedCategory(null)}
-          >
-            All
-          </Button>
-          {categories.map((category) => (
-            <Button
-              variant={selectedCategory === category ? "default" : "outline"}
-              key={category}
-              onClick={() => handleCategoryClick(category)}
-            >
-              {category}
-            </Button>
-          ))}
-        </div>
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <Header
+        onSignInClick={() => {
+          setLoginMode("login");
+          setIsLoginOpen(true);
+        }}
+        onSignUpClick={() => {
+          setLoginMode("signup");
+          setIsLoginOpen(true);
+        }}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+      <main className="w-full max-w-screen-xl mx-auto p-2 flex-grow">
+        {/* Category Filters */}
+        <div className="flex flex-wrap gap-2 mb-6 justify-center">
+          <Button
+            variant={selectedCategory === null ? "default" : "outline"}
+            onClick={() => setSelectedCategory(null)}
+          >
+            All
+          </Button>
+          {categories.map((category) => (
+            <Button
+              variant={selectedCategory === category ? "default" : "outline"}
+              key={category}
+              onClick={() => handleCategoryClick(category)}
+            >
+              {category}
+            </Button>
+          ))}
+        </div>
 
-        {isLoading && <div className="text-center py-10"><p>Loading items...</p></div>}
-        {error && <div className="text-center py-10 text-red-500"><p>Error: {error}</p></div>}
+        {isLoading && <div className="text-center py-10"><p>Loading items...</p></div>}
+        {error && <div className="text-center py-10 text-red-500"><p>Error: {error}</p></div>}
 
-        {/* Items Grid - Now uses ContentCard */}
-        {!isLoading && !error && filteredItems.length > 0 ? (
-   <div className="
-   grid
-   grid-cols-[repeat(auto-fill,minmax(240px,1fr))]
-   gap-2
- ">
- {filteredItems.map(item => (
-   <ContentCard key={item.id} item={item} />
- ))}
-</div>
+        {/* Items Grid - Now uses ContentCard */}
+        {!isLoading && !error && filteredItems.length > 0 ? (
+          <div className="
+          grid
+          grid-cols-[repeat(auto-fill,minmax(240px,1fr))]
+          gap-2
+          ">
+            {filteredItems.map(item => (
+              <ContentCard 
+                key={item.id} 
+                item={item} 
+                isAuthenticated={isAuthenticated}
+                onLoginRequired={() => setIsLoginOpen(true)}
+              />
+            ))}
+          </div>
+        ) : (
+          !isLoading && !error && <div className="text-center py-10 text-gray-500">
+            <p>No items found matching your criteria.</p>
+          </div>
+        )}
+      </main>
 
-        ) : (
-          !isLoading && !error && <div className="text-center py-10 text-gray-500">
-            <p>No items found matching your criteria.</p>
-          </div>
-        )}
-      </main>
-
-      {isLoginOpen && <LoginCard onClose={() => setIsLoginOpen(false)} />}
+      {isLoginOpen && <LoginCard onClose={() => setIsLoginOpen(false)} initialMode={loginMode} />}
     </div>
-  );
+  );
 }
