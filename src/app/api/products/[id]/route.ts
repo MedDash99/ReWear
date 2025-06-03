@@ -1,7 +1,7 @@
 // src/app/api/products/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
-import { getDB } from '@/lib/db';
+import { getItemById, updateItem, deleteItem } from '@/lib/database';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
@@ -31,9 +31,8 @@ interface ItemRow {
 
 // Helper function to check ownership
 async function checkOwnership(itemId: number, sellerId: string | number) {
-  const db = await getDB();
-  const item = await db.prepare('SELECT sellerId FROM items WHERE id = ?').get(itemId) as { sellerId: string | number } | undefined;
-  return item && item.sellerId === sellerId;
+  const item = await getItemById(itemId);
+  return item && item.seller_id === sellerId;
 }
 
 export async function DELETE(
@@ -62,22 +61,18 @@ export async function DELETE(
       return NextResponse.json({ message: "Not authorized to delete this product" }, { status: 403 });
     }
 
-    const db = await getDB();
-
-    const getItemStmt = await db.prepare('SELECT cloudinaryPublicId FROM items WHERE id = ?');
-    const itemToDelete = await getItemStmt.get(Number(id)) as { cloudinaryPublicId?: string } | undefined;
+    const itemToDelete = await getItemById(Number(id));
 
     if (!itemToDelete) {
       console.warn(`Product ${id} not found in database`);
       return NextResponse.json({ message: "Product not found" }, { status: 404 });
     }
 
-    const cloudinaryPublicId = itemToDelete.cloudinaryPublicId;
+    const cloudinaryPublicId = itemToDelete.cloudinary_public_id;
     console.log(`Preparing to delete product ${id}. Cloudinary public_id:`, cloudinaryPublicId);
 
-    const deleteStmt = await db.prepare('DELETE FROM items WHERE id = ?');
-    await deleteStmt.run(Number(id));
-    console.log(`Deleted product ${id} from SQLite.`);
+    await deleteItem(Number(id));
+    console.log(`Deleted product ${id} from Supabase.`);
 
     if (cloudinaryPublicId) {
       try {
@@ -142,31 +137,14 @@ export async function PUT(
       return NextResponse.json({ message: "Invalid price" }, { status: 400 });
     }
 
-    const db = await getDB();
-    
     // Update the item
-    const updateStmt = await db.prepare(`
-      UPDATE items 
-      SET name = ?, description = ?, price = ?, category = ?, status = ?
-      WHERE id = ?
-    `);
-    
-    await updateStmt.run(
+    const updatedItem = await updateItem(Number(id), {
       name,
       description,
-      numericPrice,
+      price: numericPrice,
       category,
-      status || 'Active', // Default to 'Active' if not provided
-      Number(id)
-    );
-
-    // Fetch updated item
-    const updatedItem = await db.prepare(
-      'SELECT i.id, i.name, i.description, i.price, i.imageUrl, i.category, i.cloudinaryPublicId, ' +
-      'u.name as sellerName, u.profile_image_url as sellerAvatarUrl ' +
-      'FROM items i JOIN users u ON i.sellerId = u.id ' +
-      'WHERE i.id = ?'
-    ).get(Number(id)) as ItemRow | undefined;
+      status: status || 'Active',
+    });
 
     if (!updatedItem) {
       return NextResponse.json({ message: "Failed to retrieve updated product" }, { status: 500 });
@@ -177,12 +155,12 @@ export async function PUT(
       name: updatedItem.name,
       description: updatedItem.description,
       price: Number(updatedItem.price),
-      imageUrl: updatedItem.imageUrl,
+      imageUrl: updatedItem.image_url,
       category: updatedItem.category,
-      cloudinaryPublicId: updatedItem.cloudinaryPublicId,
+      cloudinaryPublicId: updatedItem.cloudinary_public_id,
       seller: {
-        name: updatedItem.sellerName,
-        avatarUrl: updatedItem.sellerAvatarUrl,
+        name: updatedItem.users?.name,
+        avatarUrl: updatedItem.users?.profile_image_url,
       },
     };
 
@@ -203,13 +181,7 @@ export async function GET(
       return NextResponse.json({ message: "Valid Product ID is required" }, { status: 400 });
     }
 
-    const db = await getDB();
-    const item = await db.prepare(
-      'SELECT i.id, i.name, i.description, i.price, i.imageUrl, i.category, i.cloudinaryPublicId, i.status, i.sellerId, ' +
-      'u.name as sellerName, u.profile_image_url as sellerAvatarUrl ' +
-      'FROM items i JOIN users u ON i.sellerId = u.id ' +
-      'WHERE i.id = ?'
-    ).get(Number(id)) as ItemRow | undefined;
+    const item = await getItemById(Number(id));
 
     if (!item) {
       return NextResponse.json({ message: "Product not found" }, { status: 404 });
@@ -220,16 +192,16 @@ export async function GET(
       name: item.name,
       description: item.description,
       price: Number(item.price),
-      imageUrl: item.imageUrl,
+      imageUrl: item.image_url,
       stock: 1, // You might want to add a stock field to your items table
       shippingInfo: "Free shipping on orders over $50", // You might want to add this to your items table
       returnPolicy: "30-day return policy", // You might want to add this to your items table
       category: item.category,
       status: item.status || 'Active',
-      sellerId: item.sellerId,
+      sellerId: item.seller_id,
       seller: {
-        name: item.sellerName,
-        avatarUrl: item.sellerAvatarUrl,
+        name: item.users?.name,
+        avatarUrl: item.users?.profile_image_url,
       }
     };
 

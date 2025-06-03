@@ -269,4 +269,76 @@ export const getOffersByProduct = async (productId: number) => {
 // Helper function to get client directly if needed
 export const getSupabaseClient = async () => {
   return await createClient();
+};
+
+// Additional item functions for API routes
+export const getItemById = async (id: number) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('items')
+    .select(`
+      *,
+      users!seller_id (
+        name,
+        profile_image_url
+      )
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') { // No rows returned
+      return null;
+    }
+    console.error("Error getting item by ID:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateItem = async (id: number, updates: {
+  name?: string;
+  description?: string;
+  price?: number;
+  category?: string;
+  status?: string;
+}) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('items')
+    .update(updates)
+    .eq('id', id)
+    .select(`
+      *,
+      users!seller_id (
+        name,
+        profile_image_url
+      )
+    `)
+    .single();
+
+  if (error) {
+    console.error("Error updating item:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const deleteItem = async (id: number) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('items')
+    .delete()
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error deleting item:", error);
+    throw error;
+  }
+
+  return data;
 }; 
