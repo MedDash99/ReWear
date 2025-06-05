@@ -285,9 +285,11 @@ const BuyerDashboard: React.FC = () => {
                   </p>
                   <p style={{ margin: '5px 0', fontSize: '14px' }}>
                     <span style={{ fontWeight: 'bold' }}>My Offer: ${offer.offer_price.toFixed(2)}</span>
-                    <span style={{ marginLeft: '10px', color: '#666' }}>
-                      (Original: ${offer.product_price.toFixed(2)})
-                    </span>
+                      <span style={{ marginLeft: '10px', color: '#666' }}>
+                        (Original: {offer.product_price !== undefined
+                          ? `$${offer.product_price.toFixed(2)}`
+                          : 'N/A'})
+                      </span>
                   </p>
                   {offer.message && (
                     <p style={{ margin: '5px 0', fontSize: '12px', color: '#888', fontStyle: 'italic' }}>

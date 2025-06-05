@@ -394,7 +394,11 @@ const SellerDashboard: React.FC = () => {
                   <div>
                     <h4 style={{ margin: '0 0 5px 0', fontSize: '16px' }}>{productOffer.product_name}</h4>
                     <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
-                      Listed Price: <strong>${productOffer.product_price.toFixed(2)}</strong>
+                      Listed Price: <strong>
+                        {productOffer.product_price !== undefined
+                          ? `$${productOffer.product_price.toFixed(2)}`
+                          : 'N/A'}
+                      </strong>
                     </p>
                     <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
                       {productOffer.offers.length} offer{productOffer.offers.length !== 1 ? 's' : ''}
