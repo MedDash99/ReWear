@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ShoppingBag, Package, MessageCircle, Eye, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
+import { ConversationList } from "@/components/messaging";
+import { useMessaging } from "@/contexts/MessagingContext";
 
 // Loading skeleton components
 const MetricCardSkeleton = () => (
@@ -40,6 +42,7 @@ const ActionButtonSkeleton = () => (
 
 export default function OverviewDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const { conversations, unreadCount } = useMessaging();
 
   // Simulate loading for demonstration - in real app this would be actual data fetching
   useEffect(() => {
@@ -127,7 +130,14 @@ export default function OverviewDashboardPage() {
               <MessageCircle className="w-6 h-6 text-teal-600 group-hover:text-white" />
               <h3 className="text-base font-semibold">Messages</h3>
             </div>
-            <p className="text-2xl font-bold text-teal-600 group-hover:text-white">Data Here</p>
+            <div className="flex items-center gap-2">
+              <p className="text-2xl font-bold text-teal-600 group-hover:text-white">{conversations.length}</p>
+              {unreadCount > 0 && (
+                <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full group-hover:bg-white group-hover:text-red-500">
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -164,14 +174,8 @@ export default function OverviewDashboardPage() {
         </section>
 
         {/* MESSAGES OVERVIEW */}
-        <section className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <MessageCircle className="w-6 h-6 text-teal-600" />
-            Messages Overview
-          </h2>
-          <div className="bg-gray-50 rounded-xl p-8 text-center">
-            <p className="text-gray-600">No new messages</p>
-          </div>
+        <section className="bg-white rounded-2xl shadow-md overflow-hidden">
+          <ConversationList />
         </section>
       </div>
     </div>

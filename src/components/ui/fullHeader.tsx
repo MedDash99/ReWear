@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Search, Menu, X, Heart } from 'lucide-react';
+import { MessageIcon } from '../messaging';
 
 interface HeaderProps {
   searchQuery: string;
@@ -136,17 +137,21 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
 
             {/* === Authenticated User Section with Dropdown === */}
             {status === 'authenticated' && session && (
-              <div className="relative" ref={dropdownRef}>
-                {/* --- Dropdown Trigger --- */}
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center text-gray-700 hover:text-teal-600 focus:outline-none"
-                  aria-haspopup="true"
-                  aria-expanded={isDropdownOpen}
-                >
-                  Hi, {userData?.name || session.user?.name?.split(' ')[0] || 'User'}!
-                  <svg className={`w-4 h-4 ml-1 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
+              <>
+                {/* Message Icon */}
+                <MessageIcon />
+                
+                <div className="relative" ref={dropdownRef}>
+                  {/* --- Dropdown Trigger --- */}
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center text-gray-700 hover:text-teal-600 focus:outline-none"
+                    aria-haspopup="true"
+                    aria-expanded={isDropdownOpen}
+                  >
+                    Hi, {userData?.name || session.user?.name?.split(' ')[0] || 'User'}!
+                    <svg className={`w-4 h-4 ml-1 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </button>
 
                 {/* --- Dropdown Menu --- */}
                 {isDropdownOpen && (
@@ -178,10 +183,15 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-teal-600"
                     >
                       <div className="flex items-center">
-
-
                         Favorites
                       </div>
+                    </Link>
+                    <Link
+                      href="/messages"
+                      onClick={() => setIsDropdownOpen(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-teal-600"
+                    >
+                      Messages
                     </Link>
                     <Link
                       href="/settings"
@@ -199,6 +209,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                   </div>
                 )}
               </div>
+              </>
             )}
 
             {/* Sell Now Button */}
@@ -218,6 +229,9 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
 
             {/* Mobile Controls */}
             <div className="flex items-center space-x-1">
+              {/* Message Icon for authenticated users */}
+              {status === 'authenticated' && <MessageIcon />}
+              
               {/* Search Toggle */}
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -314,6 +328,13 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                       <Heart className="w-4 h-4 mr-2" />
                       Favorites
                     </div>
+                  </Link>
+                  <Link
+                    href="/messages"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-4 py-3 text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-lg"
+                  >
+                    Messages
                   </Link>
                   <Link
                     href="/settings"
