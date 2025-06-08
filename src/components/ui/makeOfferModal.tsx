@@ -31,15 +31,24 @@ export default function MakeOfferModal({
   const [error, setError] = useState('');
 
   const handleSubmit = () => {
+    if (!offer.trim()) {
+      setError('Offer amount is required.');
+      return;
+    }
+
     const numericOffer = parseFloat(offer);
     if (isNaN(numericOffer) || numericOffer <= 0) {
       setError('Please enter a valid offer.');
-    } else if (numericOffer >= maxPrice) {
-      setError('Offer must be lower than the listed price.');
-    } else {
-      setError('');
-      onSubmit(numericOffer, message);
+      return;
     }
+
+    if (numericOffer >= maxPrice) {
+      setError('Offer must be lower than the listed price.');
+      return;
+    }
+
+    setError('');
+    onSubmit(numericOffer, message);
   };
 
   return (
@@ -59,6 +68,9 @@ export default function MakeOfferModal({
             value={offer}
             onChange={(e) => setOffer(e.target.value)}
             disabled={isSubmitting}
+            required
+            min={1}
+            step="0.01"
           />
           <Textarea
             placeholder="Optional message to the seller"
