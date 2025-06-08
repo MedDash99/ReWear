@@ -4,9 +4,11 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { MessageSellerButton } from '@/components/messaging/MessageSellerButton';
 
 interface ProductDetailProps {
   product: {
+    id?: string;
     name: string;
     description: string;
     price: number;
@@ -16,6 +18,7 @@ interface ProductDetailProps {
     returnPolicy: string;
     status?: string;
     seller?: {
+      id?: string;
       name: string;
       avatarUrl?: string;
     };
@@ -59,7 +62,7 @@ export default function ProductDetail({ product, onMakeOffer, isOwner }: Product
       >
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-2">{product.name}</h1>
-          <p className="text-xl sm:text-2xl text-teal-600 font-bold">${product.price.toFixed(2)}</p>
+          <p className="text-xl sm:text-2xl text-teal-600 font-bold">₪{product.price.toFixed(2)}</p>
         </div>
 
         {isSold ? (
@@ -70,18 +73,34 @@ export default function ProductDetail({ product, onMakeOffer, isOwner }: Product
             </div>
           </div>
         ) : !isOwner ? (
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <Button className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg text-sm sm:text-base w-full sm:w-auto">
-              Buy Now
-            </Button>
-            {onMakeOffer && (
-              <Button 
-                variant="outline" 
-                className="border-teal-600 text-teal-600 hover:bg-teal-50 px-6 py-3 rounded-lg text-sm sm:text-base w-full sm:w-auto"
-                onClick={onMakeOffer}
-              >
-                Make Offer
+          <div className="mb-4 sm:mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
+              <Button className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg text-sm sm:text-base">
+                Buy Now
               </Button>
+              {onMakeOffer && (
+                <Button 
+                  variant="outline" 
+                  className="border-teal-600 text-teal-600 hover:bg-teal-50 px-6 py-3 rounded-lg text-sm sm:text-base"
+                  onClick={onMakeOffer}
+                >
+                  Make Offer
+                </Button>
+              )}
+            </div>
+            {product.seller && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="sm:col-span-2">
+                  <MessageSellerButton
+                    sellerId={product.seller.id || ''}
+                    sellerName={product.seller.name}
+                    itemId={product.id || ''}
+                    itemTitle={product.name}
+                    variant="outline"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-3 rounded-lg text-sm sm:text-base w-full"
+                  />
+                </div>
+              </div>
             )}
           </div>
         ) : (

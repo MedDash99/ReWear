@@ -4,6 +4,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart, ImageIcon } from 'lucide-react';
+import { useFavorites } from '@/hooks/useFavorites';
 
 // Define the type for the item prop
 type Item = {
@@ -31,9 +32,9 @@ interface ContentCardProps {
 const ContentCard: React.FC<ContentCardProps> = ({ item, isAuthenticated, onLoginRequired }) => {
   const router = useRouter();
   const [imageError, setImageError] = React.useState(false);
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Check if clicked element is specifically the favorite button or inside it
     const target = e.target as HTMLElement;
     const isFavoriteButton = target.closest('[aria-label="Favorite"]') || 
                             target.closest('button[data-favorite="true"]') ||
@@ -55,10 +56,22 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, isAuthenticated, onLogi
     router.push(`/products/${item.id}`);
   };
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    // TODO: implement favorite logic
+    
+    if (!isAuthenticated) {
+      onLoginRequired?.();
+      return;
+    }
+
+    try {
+      await toggleFavorite(item.id);
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      // The error will be logged and the optimistic update will be reverted
+      // The useFavorites hook handles the error state
+    }
   };
 
   const getInitials = (name: string | null | undefined): string => {
@@ -95,16 +108,23 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, isAuthenticated, onLogi
         <button
           onClick={handleFavoriteClick}
           data-favorite="true"
-          aria-label="Favorite"
-          className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white/95 transition-colors shadow-sm"
+          aria-label={isFavorite(item.id) ? "Remove from favorites" : "Add to favorites"}
+          title={isFavorite(item.id) ? "Remove from favorites" : "Add to favorites"}
+          className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white/95 transition-colors shadow-sm group"
         >
-          <Heart className="w-5 h-5 text-gray-600 hover:text-red-500" />
+          <Heart 
+            className={`w-5 h-5 transition-colors ${
+              isFavorite(item.id) 
+                ? 'text-red-500 fill-red-500' 
+                : 'text-gray-600 group-hover:text-red-500'
+            }`} 
+          />
         </button>
 
         {/* Price Badge Overlay */}
         <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm">
           <span className="text-base font-bold text-gray-900">
-            ${item.price.toFixed(2)}
+            ₪{item.price.toFixed(2)}
           </span>
         </div>
       </div>

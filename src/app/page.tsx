@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import Header from '../components/ui/fullHeader';       // Your Header component
 import LoginCard from '../components/ui/loginCard';
 import ContentCard from '../components/ui/contentCard'; // <<< IMPORT THE NEW ContentCard COMPONENT
+import { createClient } from "@/utils/supabase/client";
+import { getPageRange } from "@/utils/pagination";
 
 // This Item type definition should be consistent with the one in ContentCard.tsx
 // and what your /api/products endpoint returns.
@@ -29,6 +31,7 @@ type Item = {
 };
 
 const categories = ["Clothing", "Shoes", "Accessories", "Bags"];
+const PAGE_SIZE = 10;
 
 export default function StoreLandingPage() {
   const { data: session, status } = useSession();
@@ -39,6 +42,9 @@ export default function StoreLandingPage() {
   const [loginMode, setLoginMode] = useState<"login" | "signup">("login");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const isAuthenticated = !!session?.user;
 
@@ -55,24 +61,56 @@ export default function StoreLandingPage() {
   const fetchItems = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    const supabase = createClient();
     try {
-      console.log('Fetching items from API...');
-      const response = await fetch('/api/products');
-      if (!response.ok) {
-        let errorData;
-        try { errorData = await response.json(); } catch { errorData = { message: response.statusText}}
-        throw new Error(errorData.message || 'Failed to fetch products');
-      }
-      const data: Item[] = await response.json();
-      console.log('Received items from API:', data);
-      setItems(data);
+      const { from, to } = getPageRange(currentPage, PAGE_SIZE);
+      const { data, count, error } = await supabase
+        .from('items')
+        .select(
+          `
+        id,
+        name,
+        description,
+        price,
+        image_url,
+        category,
+        seller_id,
+        users:seller_id (
+          name,
+          profile_image_url
+        )
+      `,
+          { count: 'exact' }
+        )
+        .eq('status', 'Active')
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+
+      const mapped = (data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: Number(item.price),
+        imageUrl: item.image_url,
+        category: item.category,
+        sellerId: item.seller_id,
+        seller: {
+          name: item.users?.name || 'Unknown',
+          avatarUrl: item.users?.profile_image_url || null,
+        },
+      }));
+
+      setItems(mapped);
+      setTotalCount(count || 0);
     } catch (err) {
       console.error('Error fetching items:', err);
       setError((err as Error).message);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     fetchItems();
@@ -152,6 +190,28 @@ export default function StoreLandingPage() {
         ) : (
           !isLoading && !error && <div className="text-center py-10 text-gray-500">
             <p>No items found matching your criteria.</p>
+          </div>
+        )}
+        {/* Pagination Controls */}
+        {!isLoading && !error && totalPages > 1 && (
+          <div className="flex justify-between items-center mt-6">
+            <Button
+              variant="outline"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              Prev
+            </Button>
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </Button>
           </div>
         )}
       </main>
