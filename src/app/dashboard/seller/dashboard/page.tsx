@@ -1,13 +1,14 @@
 // src/app/seller-dashboard/page.tsx
 'use client';
-import { Button } from '@/components/ui/button'; // Assuming this is your styled button
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { Pencil, Trash2, DollarSign, Inbox, CheckCircle, XCircle, MessageCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-//import MinimalHeader from '@/components/ui/minimalHeader';
-// Define types for data
+import Link from 'next/link';
+
+// Types
 interface Listing {
   id: number;
   name: string;
@@ -22,11 +23,15 @@ interface Listing {
   };
 }
 
-interface Order {
+interface Offer {
   id: string;
-  buyerName: string;
-  item: string;
-  status: 'Pending' | 'Shipped' | 'Delivered' | 'Canceled';
+  offer_price: number;
+  message: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  updated_at: string;
+  buyer_name: string;
+  buyer_email: string;
 }
 
 interface OfferOnProduct {
@@ -34,27 +39,26 @@ interface OfferOnProduct {
   product_name: string;
   product_price: number;
   product_image: string;
-  offers: Array<{
-    id: string;
-    offer_price: number;
-    message: string;
-    status: 'pending' | 'accepted' | 'rejected';
-    created_at: string;
-    updated_at: string;
-    buyer_name: string;
-    buyer_email: string;
-  }>;
+  offers: Offer[];
 }
 
-const SellerDashboard: React.FC = () => {
+interface Order {
+  id: string;
+  buyerName: string;
+  item: string;
+  status: 'Pending' | 'Shipped' | 'Delivered' | 'Canceled';
+}
+
+export default function SellerDashboard() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offers, setOffers] = useState<OfferOnProduct[]>([]);
   const [loadingOffers, setLoadingOffers] = useState(true);
   
-  // --- State (using data that matches the image more closely for defaults) ---
+  // State for dashboard metrics
   const [totalListed, setTotalListed] = useState<number>(0);
   const [totalSales, setTotalSales] = useState<number>(0);
   const [currentBalance, setCurrentBalance] = useState<number>(0);
@@ -73,7 +77,6 @@ const SellerDashboard: React.FC = () => {
   // Fetch listings on component mount
   const fetchListings = async () => {
     try {
-      // Use the secure endpoint that only returns the current user's listings
       const response = await fetch('/api/products/my-listings');
       if (!response.ok) {
         throw new Error('Failed to fetch listings');
@@ -137,30 +140,11 @@ const SellerDashboard: React.FC = () => {
   useEffect(() => {
     if (session?.user) {
       fetchListings();
-    }
-  }, [session]);
-
-  // Fetch offers
-  useEffect(() => {
-    if (session?.user) {
       fetchOffers();
     }
   }, [session]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'accepted':
-        return { backgroundColor: '#d4edda', color: '#155724' };
-      case 'rejected':
-        return { backgroundColor: '#f8d7da', color: '#721c24' };
-      default:
-        return { backgroundColor: '#fff3cd', color: '#856404' };
-    }
-  };
-
   // --- Handlers ---
-  const router = useRouter();
-
   const handleAddNewItem = () => {
     console.log('Navigating to add new item page');
     router.push('/dashboard/seller/listings/new');
@@ -188,9 +172,10 @@ const SellerDashboard: React.FC = () => {
       // Update local state
       setListings(listings.filter(item => item.id !== itemId));
       setTotalListed(prev => prev - 1);
+      toast.success('Item deleted successfully');
     } catch (err) {
       console.error('Error deleting item:', err);
-      alert('Failed to delete item. Please try again.');
+      toast.error('Failed to delete item. Please try again.');
     }
   };
 
@@ -221,329 +206,256 @@ const SellerDashboard: React.FC = () => {
       setListings(listings.map(l => 
         l.id === itemId ? { ...l, status: 'Sold' } : l
       ));
+      toast.success('Item marked as sold');
     } catch (err) {
       console.error('Error marking item as sold:', err);
-      alert('Failed to mark item as sold. Please try again.');
+      toast.error('Failed to mark item as sold. Please try again.');
     }
-  };
-
-  const handleMarkAsShipped = (orderId: string) => {
-    console.log(`Marking order as shipped: ${orderId}`);
-    // Prompt for tracking number?
-    // Call API to update order status
-  };
-
-  const handleViewOrder = (orderId: string) => {
-    console.log(`Viewing order details: ${orderId}`);
-    // Example: router.push(`/seller/orders/${orderId}`);
   };
 
   const handleWithdraw = () => {
     console.log(`Withdrawing balance: $${currentBalance.toFixed(2)}`);
-    // Navigate to withdrawal page or open modal
-    // Call API
+    toast.info('Withdrawal feature coming soon!');
   };
 
-
-  // --- Styles ---
-  const sectionStyle: React.CSSProperties = {
-    backgroundColor: '#fff',
-    padding: '20px',
-    borderRadius: '8px',
-    marginBottom: '20px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+  const handleViewOrder = (orderId: string) => {
+    console.log(`Viewing order details: ${orderId}`);
+    router.push(`/seller/orders/${orderId}`);
   };
 
-  const listItemStyle: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '10px 0',
-    borderBottom: '1px solid #eee',
+  // --- Utility ---
+  const statusBadge = (status: string) => {
+    switch (status) {
+      case 'Active':   return <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-xs font-semibold">Active</span>;
+      case 'Sold':     return <span className="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">Sold</span>;
+      case 'Draft':    return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">Draft</span>;
+      case 'pending':  return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1"><Inbox className="w-4 h-4" /> Pending</span>;
+      case 'accepted': return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1"><CheckCircle className="w-4 h-4" /> Accepted</span>;
+      case 'rejected': return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1"><XCircle className="w-4 h-4" /> Rejected</span>;
+      case 'Pending':  return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">Pending</span>;
+      case 'Shipped':  return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">Shipped</span>;
+      case 'Delivered': return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">Delivered</span>;
+      case 'Canceled': return <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-semibold">Canceled</span>;
+      default:         return null;
+    }
   };
-
-  const lastListItemStyle: React.CSSProperties = { // To remove border from last item
-    ...listItemStyle,
-    borderBottom: 'none',
-  };
-
-  const itemDetailStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px', // Space between item name, price, and buttons
-  };
-
-  const itemNameStyle: React.CSSProperties = {
-    flexGrow: 1, // Allow item name to take available space
-    fontWeight: 500,
-  };
-
-  const itemPriceStyle: React.CSSProperties = {
-    minWidth: '70px', // Ensure price alignment
-    textAlign: 'right',
-    color: '#555',
-  };
-
-  const actionButtonStyle: React.CSSProperties = {
-    padding: '6px 12px',
-    fontSize: '13px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    backgroundColor: '#f7f7f7',
-    cursor: 'pointer',
-    marginLeft: '5px', // Spacing between action buttons
-  };
-  
-  const primaryButtonStyle: React.CSSProperties = { // For "Add New Item" and "Withdraw Funds"
-    backgroundColor: '#28a745', // Green color from image
-    color: 'white',
-    padding: '8px 15px',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
-  };
-
 
   if (isLoading) {
-    return <div style={{ padding: '20px' }}>Loading...</div>;
+    return (
+      <div className="bg-[#F6F6F6] min-h-screen py-10 px-2 sm:px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="py-12 text-center text-gray-400 text-base">Loading...</div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div style={{ padding: '20px', color: 'red' }}>Error: {error}</div>;
+    return (
+      <div className="bg-[#F6F6F6] min-h-screen py-10 px-2 sm:px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="py-12 text-center text-red-600 text-base">Error: {error}</div>
+        </div>
+      </div>
+    );
   }
 
+  // --- UI ---
   return (
-    <div style={{ padding: '20px', fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', backgroundColor: '#f0f2f5', minHeight: '100vh' }}>
-      <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '25px', color: '#333' }}>Seller Dashboard</h1>
-
-      {/* 1. Welcome + Overview */}
-      <section style={sectionStyle}>
-        <h2 style={{ marginTop: '0', marginBottom: '10px', fontSize: '22px', fontWeight: 'normal' }}>Welcome, {session?.user?.name || 'Seller'}!</h2>
-        <div style={{ display: 'flex', gap: '20px', color: '#555', fontSize: '14px' }}>
-          <span>Total Items Listed: <strong>{totalListed}</strong></span>
-          <span>Total Sales: <strong>${totalSales.toFixed(2)}</strong></span>
-          {/* This "Current Balance" seems different from the "Earnings" section in the image.
-              The image shows $50 here. If this is a distinct value, you'll need a separate state for it.
-              For now, I'm reflecting the structure but you might need to adjust the data source.
-              Let's assume the image's "$50" is an example and use the existing currentBalance for structure.
-              If it's truly different, you'd have another state like `overviewBalance`.
-          */}
-          <span>Current Balance: <strong>${(50).toFixed(2)}</strong></span> {/* Hardcoding $50 as per image example for this spot */}
+    <div className="bg-[#F6F6F6] min-h-screen py-10 px-2 sm:px-6">
+      <div className="max-w-5xl mx-auto">
+        {/* HEADER */}
+        <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Seller Dashboard</h1>
+            <p className="text-gray-500 mt-1">Welcome, {session?.user?.name || 'Seller'}!</p>
+          </div>
+          <Button onClick={handleAddNewItem} className="bg-teal-600 hover:bg-teal-700 rounded-full text-base px-6 py-2 font-semibold shadow">
+            + Add New Item
+          </Button>
         </div>
-      </section>
 
-      {/* 2. Your Listings */}
-      <section style={sectionStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-          <h2 style={{ marginTop: '0', marginBottom: '0', fontSize: '20px', fontWeight: 500 }}>Your Listings</h2>
-          {/* Using Button component for Add New Item */}
-          <Button onClick={handleAddNewItem} style={primaryButtonStyle}>+ Add New Item</Button>
+        {/* METRICS */}
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center">
+            <span className="text-2xl font-bold text-teal-600">{totalListed}</span>
+            <span className="text-gray-700 mt-1">Active Listings</span>
+          </div>
+          <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center">
+            <span className="text-2xl font-bold text-teal-600">
+              ₪{totalSales.toFixed(2)}
+            </span>
+            <span className="text-gray-700 mt-1">Total Sales</span>
+          </div>
+          <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center">
+            <span className="text-2xl font-bold text-teal-600">₪{currentBalance.toFixed(2)}</span>
+            <span className="text-gray-700 mt-1">Available Balance</span>
+            <Button
+              onClick={handleWithdraw}
+              className="mt-3 w-full bg-black text-white rounded-lg hover:bg-gray-900 transition text-sm font-medium"
+              disabled={currentBalance <= 0}
+            >
+              Withdraw Funds
+            </Button>
+          </div>
         </div>
-        {listings.length > 0 ? (
-          <ul style={{ listStyle: 'none', padding: '0', margin: '0' }}>
-            {listings.map((item, index) => (
-              <li key={item.id} style={index === listings.length - 1 ? lastListItemStyle : listItemStyle}>
-                <div style={itemDetailStyle}>
-                  <span style={itemNameStyle}>{item.name}</span>
-                  <span style={itemPriceStyle}>${item.price.toFixed(2)}</span>
-                </div>
-                <div style={{display: 'flex', alignItems: 'center'}}> {/* Action buttons container */}
-                  <button onClick={() => handleEditItem(item.id)} style={actionButtonStyle}>Edit</button>
-                  <button onClick={() => handleDeleteItem(item.id)} style={actionButtonStyle}>Delete</button>
-                  {item.status === 'Active' && (
-                    <button onClick={() => handleMarkAsSold(item.id)} style={{...actionButtonStyle, backgroundColor: '#007bff', color: 'white' /* Example styling for Mark Sold */}}>Mark Sold</button>
-                  )}
-                  {/* The image shows "Delete" twice for "Vintage Lamp". This is likely an error in the mock.
-                      Assuming standard Edit, Delete, Mark Sold actions. If a second delete means something else, adjust accordingly.
-                  */}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p style={{ margin: '10px 0', color: '#777' }}>You have no active listings.</p>
-        )}
-      </section>
 
-      {/* 3. Offers on My Items */}
-      <section style={sectionStyle}>
-        <h2 style={{ marginTop: '0', marginBottom: '15px', fontSize: '20px', fontWeight: 500 }}>Offers on My Items</h2>
-        {loadingOffers ? (
-          <p>Loading offers...</p>
-        ) : offers.length > 0 ? (
-          <div style={{ display: 'grid', gap: '20px' }}>
-            {offers.map((productOffer) => (
-              <div key={productOffer.product_id} style={{ 
-                border: '1px solid #ddd', 
-                borderRadius: '8px', 
-                padding: '15px',
-                backgroundColor: '#f9f9f9'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
-                  <img 
-                    src={productOffer.product_image} 
-                    alt={productOffer.product_name}
-                    style={{ 
-                      width: '60px', 
-                      height: '60px', 
-                      borderRadius: '4px', 
-                      objectFit: 'cover' 
-                    }}
-                  />
-                  <div>
-                    <h4 style={{ margin: '0 0 5px 0', fontSize: '16px' }}>{productOffer.product_name}</h4>
-                    <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
-                      Listed Price: <strong>${productOffer.product_price.toFixed(2)}</strong>
-                    </p>
-                    <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
-                      {productOffer.offers.length} offer{productOffer.offers.length !== 1 ? 's' : ''}
-                    </p>
+        {/* LISTINGS */}
+        <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Your Listings</h2>
+          {listings.length === 0 ? (
+            <div className="py-12 text-center text-gray-400 text-base">You have no active listings.</div>
+          ) : (
+            <ul className="flex flex-col gap-5">
+              {listings.map((item) => (
+                <li key={item.id} className="flex items-center gap-6 p-4 bg-gray-50 rounded-xl hover:shadow-lg transition-shadow">
+                  <img src={item.imageUrl} alt={item.name} className="w-20 h-20 rounded-xl object-cover border" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-lg text-gray-800 truncate">{item.name}</div>
+                    <div className="text-sm text-gray-500">{item.category}</div>
+                    <div className="text-base font-bold text-teal-600 mt-1">₪{item.price}</div>
+                    <div className="mt-2">{statusBadge(item.status)}</div>
+                  </div>
+                  <div className="flex flex-col gap-2 min-w-fit">
+                    <button className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition"
+                      onClick={() => handleEditItem(item.id)} title="Edit">
+                      <Pencil className="w-4 h-4" /> Edit
+                    </button>
+                    <button className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 hover:bg-red-100 text-red-600 text-sm font-medium transition"
+                      onClick={() => handleDeleteItem(item.id)} title="Delete">
+                      <Trash2 className="w-4 h-4" /> Delete
+                    </button>
+                    {item.status === "Active" && (
+                      <button className="flex items-center gap-1 px-3 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition"
+                        onClick={() => handleMarkAsSold(item.id)} title="Mark as Sold">
+                        <DollarSign className="w-4 h-4" /> Mark Sold
+                      </button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* OFFERS ON MY ITEMS */}
+        <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Offers on My Items</h2>
+          {loadingOffers ? (
+            <div className="py-12 text-center text-gray-400 text-base">Loading offers...</div>
+          ) : offers.length === 0 ? (
+            <div className="py-12 text-center text-gray-400 text-base">No offers received yet.</div>
+          ) : (
+            <div className="flex flex-col gap-7">
+              {offers.map((productOffer) => (
+                <div key={productOffer.product_id} className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center gap-4 mb-4">
+                    <img src={productOffer.product_image} alt={productOffer.product_name} className="w-14 h-14 rounded-lg object-cover border" />
+                    <div>
+                      <div className="font-medium">{productOffer.product_name}</div>
+                      <div className="text-sm text-gray-500">Listed Price: ₪{productOffer.product_price}</div>
+                      <div className="text-sm text-gray-400">{productOffer.offers.length} offer{productOffer.offers.length !== 1 ? 's' : ''}</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {productOffer.offers.map((offer) => (
+                      <div key={offer.id} className="flex items-center gap-5 p-3 bg-white rounded-lg border shadow-sm">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-700">{offer.buyer_name}</span>
+                            <span className="text-sm text-gray-400">{new Date(offer.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            <span className="font-medium text-teal-700">₪{offer.offer_price}</span>
+                            {offer.message && (
+                              <span className="italic text-gray-400 ml-2">"{offer.message}"</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1 items-end min-w-[110px]">
+                          {statusBadge(offer.status)}
+                          {offer.status === 'pending' && (
+                            <div className="flex gap-2 mt-1">
+                              <button onClick={() => handleOfferAction(offer.id, 'accepted')}
+                                className="px-3 py-1 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 text-xs font-medium transition">
+                                Accept
+                              </button>
+                              <button onClick={() => handleOfferAction(offer.id, 'rejected')}
+                                className="px-3 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium transition">
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                
-                <div style={{ display: 'grid', gap: '10px' }}>
-                  {productOffer.offers.map((offer) => (
-                    <div key={offer.id} style={{ 
-                      backgroundColor: '#fff',
-                      border: '1px solid #eee',
-                      borderRadius: '6px',
-                      padding: '12px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}>
-                          <strong>{offer.buyer_name}</strong> offered <strong style={{ color: '#28a745' }}>${offer.offer_price.toFixed(2)}</strong>
-                        </p>
-                        {offer.message && (
-                          <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
-                            "{offer.message}"
-                          </p>
-                        )}
-                        <p style={{ margin: '0', fontSize: '12px', color: '#888' }}>
-                          {new Date(offer.created_at).toLocaleDateString()} at {new Date(offer.created_at).toLocaleTimeString()}
-                        </p>
-                      </div>
-                      
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{
-                          ...getStatusColor(offer.status),
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          fontWeight: 'bold'
-                        }}>
-                          {offer.status.charAt(0).toUpperCase() + offer.status.slice(1)}
-                        </span>
-                        
-                        {offer.status === 'pending' && (
-                          <div style={{ display: 'flex', gap: '5px' }}>
-                            <button 
-                              onClick={() => handleOfferAction(offer.id, 'accepted')}
-                              style={{
-                                ...actionButtonStyle,
-                                backgroundColor: '#28a745',
-                                color: 'white',
-                                fontSize: '12px',
-                                padding: '4px 8px'
-                              }}
-                            >
-                              Accept
-                            </button>
-                            <button 
-                              onClick={() => handleOfferAction(offer.id, 'rejected')}
-                              style={{
-                                ...actionButtonStyle,
-                                backgroundColor: '#dc3545',
-                                color: 'white',
-                                fontSize: '12px',
-                                padding: '4px 8px'
-                              }}
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p style={{ margin: '10px 0', color: '#777' }}>No offers received yet.</p>
-        )}
-      </section>
-
-      {/* 4. Orders Received */}
-      <section style={sectionStyle}>
-        <h2 style={{ marginTop: '0', marginBottom: '15px', fontSize: '20px', fontWeight: 500 }}>Orders Received</h2>
-        {ordersReceived.length > 0 ? (
-          <ul style={{ listStyle: 'none', padding: '0', margin: '0' }}>
-            {ordersReceived.map((order, index) => (
-              <li key={order.id} style={index === ordersReceived.length - 1 ? lastListItemStyle : {...listItemStyle, display: 'block' /* Orders have more text, block display might be better */ } }>
-                <div>
-                  Order #{order.id} - Item: <span style={{ fontWeight: 500 }}>{order.item}</span> - Buyer: <span style={{ fontWeight: 500 }}>{order.buyerName}</span> - Status: <strong style={{color: order.status === 'Pending' ? '#ffc107' : (order.status === 'Delivered' ? '#28a745' : '#333')}}>{order.status}</strong>
-                </div>
-                <div style={{ marginTop: '8px' }}> {/* Actions for orders */}
-                  <button onClick={() => handleViewOrder(order.id)} style={{...actionButtonStyle, marginRight: '8px'}}>View Details</button>
-                  {order.status === 'Pending' && (
-                    <button onClick={() => handleMarkAsShipped(order.id)} style={{...actionButtonStyle, backgroundColor: '#17a2b8', color: 'white' /* Example for Mark Shipped */}}>Mark Shipped</button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p style={{ margin: '10px 0', color: '#777' }}>No new orders.</p>
-        )}
-      </section>
-
-      {/* 5. Earnings / Balance */}
-      <section style={sectionStyle}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-                <h2 style={{ marginTop: '0', marginBottom: '5px', fontSize: '20px', fontWeight: 500 }}>Earnings</h2>
-                <p style={{ margin: '0', fontSize: '16px', color: '#333' }}>
-                    Available Balance: <strong style={{fontSize: '18px'}}>${currentBalance.toFixed(2)}</strong>
-                </p>
+              ))}
             </div>
-            {/* Using Button component for Withdraw Funds */}
-            <Button onClick={handleWithdraw} disabled={currentBalance <= 0} style={primaryButtonStyle}>Withdraw Funds</Button>
-        </div>
-      </section>
+          )}
+        </section>
 
-      {/* 6. Messages */}
-      <section style={sectionStyle}>
-        <h2 style={{ marginTop: '0', marginBottom: '10px', fontSize: '20px', fontWeight: 500 }}>Messages</h2>
-        {messages.length > 0 ? (
-          <ul style={{ listStyle: 'none', padding: '0', margin: '0 0 15px 0' }}>
-            {messages.map((msg, index) => (
-              <li key={index} style={{ padding: '8px 0', borderBottom: index === messages.length - 1 ? 'none' : '1px solid #f0f0f0', fontSize: '14px', color: '#444' }}>
-                {msg}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p style={{ margin: '10px 0 15px 0', color: '#777' }}>No new messages.</p>
-        )}
-        <Link href="/seller/messages" style={{ color: '#007bff', textDecoration: 'none', fontSize: '14px' }}>
-          View All Messages
-        </Link>
-      </section>
+        {/* ORDERS RECEIVED */}
+        <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Orders Received</h2>
+          {ordersReceived.length === 0 ? (
+            <div className="py-8 text-center text-gray-400">No new orders.</div>
+          ) : (
+            <ul className="flex flex-col gap-5">
+              {ordersReceived.map((order) => (
+                <li key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-50 p-4 rounded-lg">
+                  <div>
+                    <div className="font-medium text-gray-700">Order #{order.id}</div>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">{order.item}</span> — <span className="font-medium">{order.buyerName}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {statusBadge(order.status)}
+                    <Button
+                      variant="outline"
+                      className="text-xs rounded-lg"
+                      onClick={() => handleViewOrder(order.id)}
+                    >
+                      View Details
+                    </Button>
+                    {order.status === "Pending" && (
+                      <Button
+                        className="bg-teal-600 text-white hover:bg-teal-700 rounded-lg text-xs"
+                        onClick={() => toast.info("Mark Shipped feature coming soon!")}
+                      >
+                        Mark Shipped
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-      {/* Placeholder for Performance Section if you plan to add it */}
-      {/*
-      <section style={sectionStyle}>
-        <h2 style={{ marginTop: '0', marginBottom: '10px', fontSize: '20px', fontWeight: 500 }}>Performance</h2>
-        <p style={{ margin: '0', color: '#777' }}>Performance metrics will be displayed here.</p>
-      </section>
-      */}
+        {/* MESSAGES */}
+        <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <MessageCircle className="w-6 h-6 text-teal-600" /> Messages
+          </h2>
+          {messages.length === 0 ? (
+            <div className="py-8 text-center text-gray-400">No new messages.</div>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {messages.map((msg, i) => (
+                <li key={i} className="text-gray-700 bg-gray-50 px-4 py-2 rounded-lg">{msg}</li>
+              ))}
+            </ul>
+          )}
+          <div className="text-right mt-4">
+            <Link href="/seller/messages">
+              <Button variant="ghost" className="text-teal-700 text-sm">View All Messages</Button>
+            </Link>
+          </div>
+        </section>
+      </div>
     </div>
   );
-};
-
-export default SellerDashboard;
+}

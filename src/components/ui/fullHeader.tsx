@@ -98,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-30">
-      <div className="container mx-auto px-4 py-4">
+      <div className="w-full px-6 py-4">
         {/* Desktop Layout */}
         <div className="hidden md:flex justify-between items-center">
           {/* Logo Link */}

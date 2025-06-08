@@ -4,18 +4,8 @@ import { createItem } from '@/lib/database'; // Updated import
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-// The Cloudinary SDK configuration might still be useful if you plan to perform
-// other Cloudinary operations from your backend in different routes (e.g., deleting images,
-// generating signed URLs for more advanced upload scenarios later).
-// For this specific 'create' operation under Option A, you are not using cloudinary.uploader.
-import { v2 as cloudinary } from 'cloudinary';
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
+// Import centralized Cloudinary utilities
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 type Item = {
   id: number;

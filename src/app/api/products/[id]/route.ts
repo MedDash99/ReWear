@@ -1,19 +1,9 @@
 // src/app/api/products/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
 import { getItemById, updateItem, deleteItem } from '@/lib/database';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-
-// --- Cloudinary Configuration (if not already globally configured) ---
-if (!cloudinary.config().cloud_name) {
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-      secure: true,
-    });
-}
+import { uploadToCloudinary, deleteFromCloudinary } from '@/lib/cloudinary';
 
 interface ItemRow {
   id: number;
@@ -76,7 +66,7 @@ export async function DELETE(
 
     if (cloudinaryPublicId) {
       try {
-        const result = await cloudinary.uploader.destroy(cloudinaryPublicId);
+        const result = await deleteFromCloudinary(cloudinaryPublicId);
         console.log(`Cloudinary deletion result for "${cloudinaryPublicId}":`, result);
       } catch (cloudErr) {
         console.error(`Cloudinary deletion failed for "${cloudinaryPublicId}":`, cloudErr);

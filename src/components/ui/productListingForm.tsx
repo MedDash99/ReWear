@@ -173,6 +173,8 @@ const ProductListingForm: React.FC<ProductListingFormProps> = () => {
                 sources: ['local', 'url', 'camera'],
                 multiple: true,
                 maxFiles: 5,
+                folder: process.env.NEXT_PUBLIC_CLOUDINARY_FOLDER,
+                upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
               }}
             >
               <div className="cursor-pointer border-2 border-dashed border-teal-300 rounded-md w-full h-32 sm:h-40 flex items-center justify-center overflow-hidden hover:border-teal-400 transition-colors">
