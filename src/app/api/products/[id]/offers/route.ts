@@ -21,8 +21,12 @@ export async function POST(
 
   try {
     const body = await request.json();
-    const { offer, message } = body;
+    const { offer, message } = body ?? {};
     const buyerId = session.user.id;
+
+    if (offer === undefined || offer === null) {
+      return NextResponse.json({ message: "Offer amount is required" }, { status: 400 });
+    }
 
     // Validate offer
     const numericOffer = Number(offer);
