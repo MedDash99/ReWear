@@ -55,7 +55,7 @@ export default function MakeOfferModal({
         <div className="space-y-4 mt-2">
           <Input
             type="number"
-            placeholder="Your offer ($)"
+            placeholder="Your offer (₪)"
             value={offer}
             onChange={(e) => setOffer(e.target.value)}
             disabled={isSubmitting}
