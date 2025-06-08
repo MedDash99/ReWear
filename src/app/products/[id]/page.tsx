@@ -7,6 +7,7 @@ import MakeOfferModal from '@/components/ui/makeOfferModal';
 import { toast } from 'sonner';
 
 interface Product {
+  id?: string;
   name: string;
   description: string;
   price: number;
@@ -17,6 +18,7 @@ interface Product {
   status?: string;
   sellerId?: string;
   seller?: {
+    id?: string;
     name: string;
     avatarUrl?: string;
   };
@@ -44,6 +46,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
       .then((data) => {
         // The API returns a different structure, so we need to map it
         const productData: Product = {
+          id: data.id,
           name: data.name,
           description: data.description,
           price: data.price,
@@ -53,7 +56,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           returnPolicy: data.returnPolicy || "30-day return policy",
           status: data.status,
           sellerId: data.sellerId,
-          seller: data.seller
+          seller: data.seller ? {
+            id: data.seller.id || data.sellerId,
+            name: data.seller.name,
+            avatarUrl: data.seller.avatarUrl
+          } : undefined
         };
         setProduct(productData);
       })

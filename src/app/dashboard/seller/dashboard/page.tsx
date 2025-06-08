@@ -7,6 +7,8 @@ import { Pencil, Trash2, DollarSign, Inbox, CheckCircle, XCircle, MessageCircle 
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { ConversationList } from '@/components/messaging';
+import { useMessaging } from '@/contexts/MessagingContext';
 
 // Types
 interface Listing {
@@ -134,21 +136,17 @@ export default function SellerDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [offers, setOffers] = useState<OfferOnProduct[]>([]);
   const [loadingOffers, setLoadingOffers] = useState(true);
+  const { conversations, unreadCount } = useMessaging();
   
   // State for dashboard metrics
   const [totalListed, setTotalListed] = useState<number>(0);
   const [totalSales, setTotalSales] = useState<number>(0);
   const [currentBalance, setCurrentBalance] = useState<number>(0);
 
-  // Placeholder data for orders and messages
+  // Placeholder data for orders
   const ordersReceived: Order[] = [
     { id: 'o1', buyerName: 'Alice', item: 'Handmade Scarf', status: 'Pending' },
     { id: 'o2', buyerName: 'Bob', item: 'Old Book', status: 'Delivered' },
-  ];
-
-  const messages: string[] = [
-    'Inquiry about Vintage Lamp from Charlie',
-    'Question about shipping for order #o1',
   ];
 
   // Fetch listings on component mount
@@ -366,17 +364,25 @@ export default function SellerDashboard() {
           </section>
 
           {/* MESSAGES SKELETON */}
-          <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
+          <section className="bg-white rounded-2xl shadow-md overflow-hidden">
+            <div className="p-4 border-b">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
+              </div>
             </div>
-            <ul className="flex flex-col gap-3">
-              <MessageSkeleton />
-              <MessageSkeleton />
-            </ul>
-            <div className="text-right mt-4">
-              <div className="h-6 bg-gray-200 rounded w-32 ml-auto animate-pulse"></div>
+            <div className="h-[400px] p-4 space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="flex items-center space-x-3 p-3">
+                    <div className="rounded-full bg-gray-300 h-12 w-12"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         </div>
@@ -574,24 +580,8 @@ export default function SellerDashboard() {
         </section>
 
         {/* MESSAGES */}
-        <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <MessageCircle className="w-6 h-6 text-teal-600" /> Messages
-          </h2>
-          {messages.length === 0 ? (
-            <div className="py-8 text-center text-gray-400">No new messages.</div>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {messages.map((msg, i) => (
-                <li key={i} className="text-gray-700 bg-gray-50 px-4 py-2 rounded-lg">{msg}</li>
-              ))}
-            </ul>
-          )}
-          <div className="text-right mt-4">
-            <Link href="/seller/messages">
-              <Button variant="ghost" className="text-teal-700 text-sm">View All Messages</Button>
-            </Link>
-          </div>
+        <section className="bg-white rounded-2xl shadow-md overflow-hidden">
+          <ConversationList />
         </section>
       </div>
     </div>
