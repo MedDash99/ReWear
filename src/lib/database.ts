@@ -271,6 +271,86 @@ export const getSupabaseClient = async () => {
   return await createClient();
 };
 
+// Favorites functions
+export const addToFavorites = async (userId: string, itemId: number) => {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('favorites')
+    .upsert({ 
+      user_id: userId, 
+      item_id: itemId 
+    }, { 
+      onConflict: 'user_id,item_id' 
+    });
+
+  if (error) {
+    console.error("Error adding to favorites:", error);
+    throw error;
+  }
+};
+
+export const removeFromFavorites = async (userId: string, itemId: number) => {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('favorites')
+    .delete()
+    .eq('user_id', userId)
+    .eq('item_id', itemId);
+
+  if (error) {
+    console.error("Error removing from favorites:", error);
+    throw error;
+  }
+};
+
+export const getUserFavorites = async (userId: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('favorites')
+    .select('item_id')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error("Error getting user favorites:", error);
+    throw error;
+  }
+
+  return data?.map(fav => fav.item_id) || [];
+};
+
+export const getUserFavoritesWithItems = async (userId: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('favorites')
+    .select(`
+      item_id,
+      created_at,
+      items (
+        id,
+        name,
+        description,
+        price,
+        image_url,
+        category,
+        seller_id,
+        users!items_seller_id_fkey (
+          id,
+          name,
+          profile_image_url
+        )
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Error getting favorites with items:", error);
+    throw error;
+  }
+
+  return data || [];
+};
+
 // Additional item functions for API routes
 export const getItemById = async (id: number) => {
   const supabase = await createClient();

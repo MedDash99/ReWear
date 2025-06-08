@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server';
-import { getItemsBySeller } from '@/lib/database';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { supabase } from '@/lib/supabase';
 
-export async function GET() {
+async function getItemsBySeller(sellerId: string) {
+  const { data, error } = await supabase
+    .from('items')
+    .select('*')
+    .eq('seller_id', sellerId);
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function GET(request: Request) {
   try {
-    // Get the authenticated user's session
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user || !session.user.id) {

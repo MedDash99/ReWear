@@ -32,43 +32,32 @@ async function getUserSession(request: NextRequest): Promise<UserSessionInfo> {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const method = request.method; // Get the HTTP method
+  const method = request.method;
   const session = await getUserSession(request);
 
-  console.log(
-    `Middleware: Path: ${pathname}, Method: ${method}, Auth=${session.isAuthenticated}`
-  );
+  // Only log in development and for specific debugging needs
+  // console.log(`Middleware: Path: ${pathname}, Method: ${method}, Auth=${session.isAuthenticated}`);
 
-  // 1. Allow static assets and Next.js specific paths (from your config.matcher effectively)
-  // Your config.matcher handles this, but explicit check can be an early exit if needed, though usually matcher is enough.
-  // For simplicity, assuming your matcher correctly excludes these.
-
+  // --- Public API Access Control ---
   // 2. Allow critical API routes (like auth routes)
   const isCriticalApiRoute = CRITICAL_API_ROUTES.some(p => pathname.startsWith(p));
   if (isCriticalApiRoute) {
-    console.log(`Middleware: Allowing critical API route ${pathname}`);
     return NextResponse.next();
   }
 
   // 3. Allow specific public API GET paths
   if (method === 'GET' && PUBLIC_API_GET_PATHS.includes(pathname)) {
-    console.log(`Middleware: Allowing public GET access to API path: ${pathname}`);
     return NextResponse.next();
   }
 
   // --- Authenticated Users ---
   if (session.isAuthenticated) {
-    console.log(`Middleware: User authenticated. Allowing access to ${pathname}.`);
     return NextResponse.next();
   }
 
   // --- Unauthenticated Users ---
-  // At this point, user is NOT authenticated, AND it's not a critical API route,
-  // AND it's not a public GET API path we explicitly allowed.
-
   const isPublicPagePath = PUBLIC_PATHS.includes(pathname);
   if (isPublicPagePath) {
-    console.log(`Middleware: Unauth user, public page path ${pathname}. Allowing.`);
     return NextResponse.next();
   }
 

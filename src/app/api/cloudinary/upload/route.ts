@@ -3,19 +3,14 @@ import { uploadToCloudinary } from '@/lib/cloudinary';
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const { filePathOrBuffer, options = {} } = await request.json();
     
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    if (!filePathOrBuffer) {
+      return NextResponse.json({ error: 'No file path or buffer provided' }, { status: 400 });
     }
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Upload to Cloudinary with folder
-    const result = await uploadToCloudinary(`data:${file.type};base64,${buffer.toString('base64')}`);
+    // Upload to Cloudinary with folder and any additional options
+    const result = await uploadToCloudinary(filePathOrBuffer, options);
 
     return NextResponse.json({
       public_id: result.public_id,
@@ -26,6 +21,7 @@ export async function POST(request: NextRequest) {
       height: result.height,
       format: result.format,
       resource_type: result.resource_type,
+      folder: result.folder,
     });
 
   } catch (error) {
@@ -35,4 +31,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+} 

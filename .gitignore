@@ -1,4 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 /node_modules
@@ -14,7 +13,8 @@
 
 # testing
 /coverage
-
+/scripts
+/__tests__
 # next.js
 /.next/
 /out/

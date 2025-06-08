@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label"
 import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { signIn } from "next-auth/react"; // Added from LoginCard
-import { X } from "lucide-react"; // Added from LoginCard
+import { signIn } from "next-auth/react"; 
+import { X } from "lucide-react"; 
+import { useRouter } from "next/navigation";
 
 // Interface for props, including onClose from LoginCard
 interface AuthCardProps {
@@ -23,6 +24,8 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
   const [confirmPassword, setConfirmPassword] = useState(""); // Kept for signup
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Added from LoginCard
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   // Combined handleSubmit for login and signup
   const handleSubmit = async () => {
@@ -45,7 +48,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
         setIsLoading(false);
         return;
       }
-      
+
       try {
         const signUpResponse = await fetch('/api/auth/signup', {
           method: 'POST',
@@ -60,16 +63,17 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
         }
 
         // After successful sign-up, automatically sign them in
-        const result = await signIn("credentials", {
-          email,
-          password,
-          redirect: false,
-        });
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
 
-        if (result?.error) {
-          console.error("Login after signup failed:", result.error);
-          alert("Signup was successful, but login failed: " + result.error);
-        } else {
+      if (result?.error) {
+        setError("Invalid email or password");
+      } else if (result?.ok) {
+        router.push("/dashboard/seller/dashboard");
+      } else {
           onClose?.(); // Close modal on successful login after signup
         }
       } catch (error) {
@@ -99,12 +103,12 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
         } else if (result?.ok) {
           console.log("Login successful");
           onClose?.();
-        }
-      } catch (error) {
-        console.error("Login error:", error);
+      }
+    } catch (error) {
+      console.error("Login error:", error);
         alert("An unexpected error occurred during login.");
-      } finally {
-        setIsLoading(false);
+    } finally {
+      setIsLoading(false);
       }
     }
   };
