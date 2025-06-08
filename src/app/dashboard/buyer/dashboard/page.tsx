@@ -35,12 +35,69 @@ interface Offer {
   seller_name: string;
 }
 
+// Loading skeleton components
+const ProfileSkeleton = () => (
+  <section className="bg-white rounded-2xl shadow-md p-6 mb-8 animate-pulse">
+    <div className="flex items-center gap-6">
+      <div className="w-20 h-20 rounded-full bg-gray-200"></div>
+      <div className="space-y-2">
+        <div className="h-6 bg-gray-200 rounded w-48"></div>
+        <div className="h-4 bg-gray-200 rounded w-64"></div>
+      </div>
+    </div>
+  </section>
+);
+
+const OrderItemSkeleton = () => (
+  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl animate-pulse">
+    <div className="space-y-2">
+      <div className="h-4 bg-gray-200 rounded w-32"></div>
+      <div className="h-6 bg-gray-200 rounded w-16"></div>
+    </div>
+    <div className="h-8 bg-gray-200 rounded w-20"></div>
+  </div>
+);
+
+const SavedItemSkeleton = () => (
+  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl animate-pulse">
+    <div className="space-y-2">
+      <div className="h-4 bg-gray-200 rounded w-36"></div>
+      <div className="h-5 bg-gray-200 rounded w-16"></div>
+    </div>
+    <div className="h-8 bg-gray-200 rounded w-20"></div>
+  </div>
+);
+
+const OfferItemSkeleton = () => (
+  <div className="flex items-center gap-6 p-4 bg-gray-50 rounded-xl animate-pulse">
+    <div className="w-16 h-16 bg-gray-200 rounded-xl"></div>
+    <div className="flex-1 space-y-2">
+      <div className="h-5 bg-gray-200 rounded w-48"></div>
+      <div className="h-3 bg-gray-200 rounded w-32"></div>
+      <div className="h-4 bg-gray-200 rounded w-40"></div>
+      <div className="h-3 bg-gray-200 rounded w-56"></div>
+      <div className="h-3 bg-gray-200 rounded w-28"></div>
+    </div>
+    <div className="flex flex-col items-end gap-3 min-w-fit">
+      <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+      <div className="h-6 bg-gray-200 rounded w-24"></div>
+    </div>
+  </div>
+);
+
+const NotificationSkeleton = () => (
+  <div className="p-3 bg-gray-50 rounded-lg animate-pulse">
+    <div className="h-4 bg-gray-200 rounded w-full"></div>
+  </div>
+);
+
 const BuyerDashboard: React.FC = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loadingOffers, setLoadingOffers] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
 
   // --- Placeholder Data --- 
   const currentOrders: Order[] = [
@@ -55,6 +112,14 @@ const BuyerDashboard: React.FC = () => {
     'Message from SellerX regarding order #123',
     'Price drop on Wishlist Item 1!',
   ];
+
+  // Simulate initial page loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Fetch offers
   useEffect(() => {
@@ -164,11 +229,83 @@ const BuyerDashboard: React.FC = () => {
     }
   }, [status, router]);
 
-  if (status === 'loading') {
+  // Show loading skeleton during initial load or session loading
+  if (status === 'loading' || pageLoading) {
     return (
       <div className="bg-[#F6F6F6] min-h-screen py-10 px-2 sm:px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="py-12 text-center text-gray-400 text-base">Loading dashboard...</div>
+          {/* HEADER SKELETON */}
+          <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-48"></div>
+            </div>
+            <div className="w-32 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+          </div>
+
+          {/* PROFILE SKELETON */}
+          <ProfileSkeleton />
+
+          {/* ORDERS AND SAVED ITEMS SKELETON */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Current Orders Skeleton */}
+            <section className="bg-white rounded-2xl shadow-md p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+              </div>
+              <div className="flex flex-col gap-4">
+                <OrderItemSkeleton />
+                <OrderItemSkeleton />
+              </div>
+            </section>
+
+            {/* Saved Items Skeleton */}
+            <section className="bg-white rounded-2xl shadow-md p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-5 bg-gray-200 rounded w-24 animate-pulse"></div>
+              </div>
+              <div className="flex flex-col gap-4">
+                <SavedItemSkeleton />
+                <SavedItemSkeleton />
+              </div>
+            </section>
+          </div>
+
+          {/* OFFERS SKELETON */}
+          <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <div className="h-6 bg-gray-200 rounded w-24 mb-4 animate-pulse"></div>
+            <div className="flex flex-col gap-5">
+              <OfferItemSkeleton />
+              <OfferItemSkeleton />
+              <OfferItemSkeleton />
+            </div>
+          </section>
+
+          {/* NOTIFICATIONS SKELETON */}
+          <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-5 bg-gray-200 rounded w-28 animate-pulse"></div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <NotificationSkeleton />
+              <NotificationSkeleton />
+            </div>
+          </section>
+
+          {/* SUPPORT SKELETON */}
+          <section className="bg-white rounded-2xl shadow-md p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-5 bg-gray-200 rounded w-16 animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+            </div>
+          </section>
         </div>
       </div>
     );
@@ -284,7 +421,11 @@ const BuyerDashboard: React.FC = () => {
         <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4">My Offers</h2>
           {loadingOffers ? (
-            <div className="py-12 text-center text-gray-400 text-base">Loading offers...</div>
+            <div className="flex flex-col gap-5">
+              <OfferItemSkeleton />
+              <OfferItemSkeleton />
+              <OfferItemSkeleton />
+            </div>
           ) : offers.length > 0 ? (
             <div className="flex flex-col gap-5">
               {offers.map((offer) => (

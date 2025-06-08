@@ -6,12 +6,86 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ShoppingBag, Package, DollarSign, MessageCircle, Eye, Activity } from "lucide-react";
-// You might have Avatar components if you show messages summary here, but NOT the main header Avatar.
+import { useState, useEffect } from "react";
+
+// Loading skeleton components
+const MetricCardSkeleton = () => (
+  <div className="bg-white rounded-2xl shadow-md p-6 animate-pulse">
+    <div className="flex items-center gap-3 mb-3">
+      <div className="w-6 h-6 bg-gray-200 rounded"></div>
+      <div className="h-4 bg-gray-200 rounded w-24"></div>
+    </div>
+    <div className="h-8 bg-gray-200 rounded w-16"></div>
+  </div>
+);
+
+const SectionSkeleton = ({ title }: { title: string }) => (
+  <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+    <div className="flex items-center gap-2 mb-4">
+      <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+      <div className="h-5 bg-gray-200 rounded w-32 animate-pulse"></div>
+    </div>
+    <div className="bg-gray-50 rounded-xl p-8">
+      <div className="animate-pulse space-y-3">
+        <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+      </div>
+    </div>
+  </section>
+);
+
+const ActionButtonSkeleton = () => (
+  <div className="h-12 bg-gray-200 rounded-lg animate-pulse w-full sm:w-48"></div>
+);
 
 export default function OverviewDashboardPage() {
-  // const { data: session } = useSession(); // Not needed if userName is in layout
-  // const userName = session?.user?.name || "User"; // Already in layout
-  // const [role, setRole] = useState("buyer"); // DELETE THIS - This logic is handled by the layout
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate loading for demonstration - in real app this would be actual data fetching
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="bg-[#F6F6F6] min-h-screen py-10 px-2 sm:px-6">
+        <div className="max-w-5xl mx-auto">
+          {/* HEADER SKELETON */}
+          <div className="mb-8 animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-80"></div>
+          </div>
+
+          {/* SUMMARY CARDS SKELETON */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
+          </div>
+
+          {/* ACTION BUTTONS SKELETON */}
+          <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <div className="h-6 bg-gray-200 rounded w-32 mb-6 animate-pulse"></div>
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4">
+              <ActionButtonSkeleton />
+              <ActionButtonSkeleton />
+            </div>
+          </section>
+
+          {/* RECENT ORDERS SKELETON */}
+          <SectionSkeleton title="Recent Orders Summary" />
+
+          {/* MESSAGES SKELETON */}
+          <SectionSkeleton title="Messages Overview" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#F6F6F6] min-h-screen py-10 px-2 sm:px-6">

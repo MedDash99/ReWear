@@ -49,6 +49,83 @@ interface Order {
   status: 'Pending' | 'Shipped' | 'Delivered' | 'Canceled';
 }
 
+// Loading skeleton components
+const MetricCardSkeleton = () => (
+  <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center animate-pulse">
+    <div className="h-8 bg-gray-200 rounded w-16 mb-2"></div>
+    <div className="h-4 bg-gray-200 rounded w-24"></div>
+    <div className="h-8 bg-gray-200 rounded w-full mt-3"></div>
+  </div>
+);
+
+const ListingItemSkeleton = () => (
+  <li className="flex items-center gap-6 p-4 bg-gray-50 rounded-xl animate-pulse">
+    <div className="w-20 h-20 bg-gray-200 rounded-xl"></div>
+    <div className="flex-1 min-w-0 space-y-2">
+      <div className="h-5 bg-gray-200 rounded w-48"></div>
+      <div className="h-3 bg-gray-200 rounded w-24"></div>
+      <div className="h-4 bg-gray-200 rounded w-16"></div>
+      <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+    </div>
+    <div className="flex flex-col gap-2 min-w-fit">
+      <div className="h-8 bg-gray-200 rounded-lg w-16"></div>
+      <div className="h-8 bg-gray-200 rounded-lg w-16"></div>
+      <div className="h-8 bg-gray-200 rounded-lg w-20"></div>
+    </div>
+  </li>
+);
+
+const OfferProductSkeleton = () => (
+  <div className="bg-gray-50 rounded-xl p-4 animate-pulse">
+    <div className="flex items-center gap-4 mb-4">
+      <div className="w-14 h-14 bg-gray-200 rounded-lg"></div>
+      <div className="space-y-2">
+        <div className="h-4 bg-gray-200 rounded w-32"></div>
+        <div className="h-3 bg-gray-200 rounded w-24"></div>
+        <div className="h-3 bg-gray-200 rounded w-16"></div>
+      </div>
+    </div>
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-5 p-3 bg-white rounded-lg border">
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-4 bg-gray-200 rounded w-24"></div>
+            <div className="h-3 bg-gray-200 rounded w-16"></div>
+          </div>
+          <div className="h-3 bg-gray-200 rounded w-40"></div>
+        </div>
+        <div className="flex flex-col gap-1 items-end min-w-[110px]">
+          <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+          <div className="flex gap-2 mt-1">
+            <div className="h-6 bg-gray-200 rounded-lg w-12"></div>
+            <div className="h-6 bg-gray-200 rounded-lg w-12"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const OrderItemSkeleton = () => (
+  <li className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-50 p-4 rounded-lg animate-pulse">
+    <div className="space-y-2">
+      <div className="h-4 bg-gray-200 rounded w-24"></div>
+      <div className="h-3 bg-gray-200 rounded w-40"></div>
+    </div>
+    <div className="flex items-center gap-3">
+      <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+      <div className="h-8 bg-gray-200 rounded-lg w-20"></div>
+      <div className="h-8 bg-gray-200 rounded-lg w-24"></div>
+    </div>
+  </li>
+);
+
+const MessageSkeleton = () => (
+  <li className="bg-gray-50 px-4 py-2 rounded-lg animate-pulse">
+    <div className="h-4 bg-gray-200 rounded w-full"></div>
+  </li>
+);
+
 export default function SellerDashboard() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -244,7 +321,64 @@ export default function SellerDashboard() {
     return (
       <div className="bg-[#F6F6F6] min-h-screen py-10 px-2 sm:px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="py-12 text-center text-gray-400 text-base">Loading...</div>
+          {/* HEADER SKELETON */}
+          <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-48"></div>
+            </div>
+            <div className="w-32 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+          </div>
+
+          {/* METRICS SKELETON */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
+            <MetricCardSkeleton />
+          </div>
+
+          {/* LISTINGS SKELETON */}
+          <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <div className="h-6 bg-gray-200 rounded w-32 mb-4 animate-pulse"></div>
+            <ul className="flex flex-col gap-5">
+              <ListingItemSkeleton />
+              <ListingItemSkeleton />
+              <ListingItemSkeleton />
+            </ul>
+          </section>
+
+          {/* OFFERS SKELETON */}
+          <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
+            <div className="flex flex-col gap-7">
+              <OfferProductSkeleton />
+              <OfferProductSkeleton />
+            </div>
+          </section>
+
+          {/* ORDERS SKELETON */}
+          <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <div className="h-6 bg-gray-200 rounded w-36 mb-4 animate-pulse"></div>
+            <ul className="flex flex-col gap-5">
+              <OrderItemSkeleton />
+              <OrderItemSkeleton />
+            </ul>
+          </section>
+
+          {/* MESSAGES SKELETON */}
+          <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
+            </div>
+            <ul className="flex flex-col gap-3">
+              <MessageSkeleton />
+              <MessageSkeleton />
+            </ul>
+            <div className="text-right mt-4">
+              <div className="h-6 bg-gray-200 rounded w-32 ml-auto animate-pulse"></div>
+            </div>
+          </section>
         </div>
       </div>
     );
@@ -342,7 +476,11 @@ export default function SellerDashboard() {
         <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Offers on My Items</h2>
           {loadingOffers ? (
-            <div className="py-12 text-center text-gray-400 text-base">Loading offers...</div>
+            <div className="flex flex-col gap-7">
+              <OfferProductSkeleton />
+              <OfferProductSkeleton />
+              <OfferProductSkeleton />
+            </div>
           ) : offers.length === 0 ? (
             <div className="py-12 text-center text-gray-400 text-base">No offers received yet.</div>
           ) : (
