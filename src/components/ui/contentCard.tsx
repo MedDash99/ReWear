@@ -124,7 +124,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, isAuthenticated, onLogi
         {/* Price Badge Overlay */}
         <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm">
           <span className="text-base font-bold text-gray-900">
-            ${item.price.toFixed(2)}
+            ₪{item.price.toFixed(2)}
           </span>
         </div>
       </div>
