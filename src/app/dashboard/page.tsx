@@ -5,7 +5,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingBag, Package, DollarSign, MessageCircle, Eye, Activity } from "lucide-react";
+import { ShoppingBag, Package, MessageCircle, Eye, Activity } from "lucide-react";
 import { useState, useEffect } from "react";
 
 // Loading skeleton components
@@ -116,7 +116,7 @@ export default function OverviewDashboardPage() {
 
           <div className="bg-white rounded-2xl shadow-md p-6 hover:bg-teal-600 hover:text-white hover:-translate-y-1 transition-all duration-200 cursor-pointer group">
             <div className="flex items-center gap-3 mb-3">
-              <DollarSign className="w-6 h-6 text-teal-600 group-hover:text-white" />
+              <span className="w-6 h-6 text-teal-600 group-hover:text-white text-xl font-bold">₪</span>
               <h3 className="text-base font-semibold">Total Sales</h3>
             </div>
             <p className="text-2xl font-bold text-teal-600 group-hover:text-white">Data Here</p>
