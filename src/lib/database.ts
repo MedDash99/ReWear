@@ -14,6 +14,7 @@ export interface UserFromDB {
   wishlist: string | null;
   address: string | null;
   phone: string | null;
+  language: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,7 +43,8 @@ export const createUser = async (
         cart: null,
         wishlist: null,
         address: null,
-        phone: null
+        phone: null,
+        language: 'english' // Default language for new users
       })
       .select()
       .single();
@@ -417,6 +419,24 @@ export const deleteItem = async (id: number) => {
 
   if (error) {
     console.error("Error deleting item:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+// User preferences functions
+export const updateUserLanguage = async (userId: string, language: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('users')
+    .update({ language })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating user language:", error);
     throw error;
   }
 
