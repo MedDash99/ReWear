@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
+import type { CategoryId } from '@/lib/categories';
 import { hash } from 'bcryptjs';
 
 // User interface - updated for Supabase types
@@ -116,7 +117,7 @@ export const createItem = async (item: {
   name: string;
   description?: string;
   price: number;
-  category?: string;
+  category?: CategoryId;
   image_url?: string;
   cloudinary_public_id?: string;
   status?: string;
@@ -383,7 +384,7 @@ export const updateItem = async (id: number, updates: {
   name?: string;
   description?: string;
   price?: number;
-  category?: string;
+  category?: CategoryId;
   status?: string;
 }) => {
   const supabase = await createClient();

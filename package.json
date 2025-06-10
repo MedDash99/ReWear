@@ -90,6 +90,7 @@
     "test": "jest",
     "generate-test-data": "ts-node --project scripts/tsconfig.json scripts/generate-test-data.ts",
     "delete-test-items": "ts-node --project scripts/tsconfig.json scripts/delete-test-items.ts",
-    "add-test-items": "ts-node --project scripts/tsconfig.json scripts/add-test-items.ts"
+    "add-test-items": "ts-node --project scripts/tsconfig.json scripts/add-test-items.ts",
+    "migrate-categories": "ts-node --project scripts/tsconfig.json scripts/migrate-categories.ts"
   }
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,12 +12,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslation } from "@/i18n/useTranslation";
 
 export default function PreferencesPage() {
   const { data: session } = useSession();
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("english");
+  const { t, locale } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(locale);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Map between locale codes and display values for the API
+  const localeToApiLanguage = (locale: string) => {
+    return locale === 'fr' ? 'french' : 'english';
+  };
+
+  const apiLanguageToLocale = (language: string) => {
+    return language === 'french' ? 'fr' : 'en';
+  };
 
   // Load user preferences when component mounts
   useEffect(() => {
@@ -28,7 +42,8 @@ export default function PreferencesPage() {
         const response = await fetch('/api/user/preferences');
         if (response.ok) {
           const data = await response.json();
-          setSelectedLanguage(data.language || "english");
+          const savedLocale = apiLanguageToLocale(data.language || 'english');
+          setSelectedLanguage(savedLocale);
         }
       } catch (error) {
         console.error('Failed to load preferences:', error);
@@ -48,18 +63,26 @@ export default function PreferencesPage() {
 
     setIsSaving(true);
     try {
+      // Save to database with API format
       const response = await fetch('/api/user/preferences', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          language: selectedLanguage,
+          language: localeToApiLanguage(selectedLanguage),
         }),
       });
 
       if (response.ok) {
-        toast.success('Preferences have been saved.');
+        // If language changed, navigate to the new locale
+        if (selectedLanguage !== locale) {
+          const currentPath = pathname.replace(`/${locale}`, '');
+          router.push(`/${selectedLanguage}${currentPath}`);
+          toast.success('Language updated and applied!');
+        } else {
+          toast.success('Preferences have been saved.');
+        }
       } else {
         throw new Error('Failed to save preferences');
       }
@@ -70,6 +93,9 @@ export default function PreferencesPage() {
       setIsSaving(false);
     }
   };
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = selectedLanguage !== locale;
 
   if (isLoading) {
     return (
@@ -99,8 +125,17 @@ export default function PreferencesPage() {
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Language</h3>
             <p className="text-sm text-gray-600 mt-1">
-              Choose your preferred language for the app interface.
+              Choose your preferred language for the app interface. This setting will be applied across the entire app.
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Currently viewing in: <span className="font-medium">{locale === 'en' ? 'English' : 'Français'}</span>
+            </p>
+            {hasUnsavedChanges && (
+              <p className="text-sm text-amber-600 mt-2 flex items-center gap-1">
+                <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                You have unsaved language changes
+              </p>
+            )}
           </div>
           
           <div className="max-w-xs">
@@ -109,8 +144,8 @@ export default function PreferencesPage() {
                 <SelectValue placeholder="Select a language" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="english">English</SelectItem>
-                <SelectItem value="french">French</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="fr">Français</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -142,10 +177,19 @@ export default function PreferencesPage() {
           <Button 
             onClick={handleSavePreferences}
             disabled={isSaving}
-            className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2"
+            className={`px-6 py-2 ${
+              hasUnsavedChanges 
+                ? 'bg-amber-600 hover:bg-amber-700 text-white' 
+                : 'bg-teal-600 hover:bg-teal-700 text-white'
+            }`}
           >
-            {isSaving ? 'Saving...' : 'Save Preferences'}
+            {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save & Apply Changes' : 'Save Preferences'}
           </Button>
+          {hasUnsavedChanges && (
+            <p className="text-xs text-gray-500 mt-2">
+              Saving will apply the language change immediately
+            </p>
+          )}
         </div>
       </div>
     </div>
