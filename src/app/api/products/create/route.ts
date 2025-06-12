@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createItem } from '@/lib/database'; // Updated import
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
+import { isValidCategoryId, type CategoryId } from '@/lib/categories';
 
 // Import centralized Cloudinary utilities
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -13,7 +14,7 @@ type Item = {
   description: string;
   price: number;
   imageUrl: string;
-  category: string;
+  category: CategoryId;
   seller: {
     name: string;
     avatarUrl: string;
@@ -57,12 +58,12 @@ export async function POST(request: NextRequest) {
       !name || typeof name !== 'string' ||
       !description || typeof description !== 'string' ||
       price === undefined || typeof price !== 'number' || isNaN(price) || price <= 0 ||
-      !category || typeof category !== 'string' ||
+      !category || typeof category !== 'string' || !isValidCategoryId(category) ||
       !imageUrl || typeof imageUrl !== 'string' ||
       !cloudinaryPublicId || typeof cloudinaryPublicId !== 'string'
     ) {
       return NextResponse.json(
-        { message: "Missing or invalid required fields. Ensure name, description, price, category, imageUrl, and cloudinaryPublicId are provided and correctly formatted." },
+        { message: "Missing or invalid required fields. Ensure name, description, price, category (valid category ID), imageUrl, and cloudinaryPublicId are provided and correctly formatted." },
         { status: 400 }
       );
     }

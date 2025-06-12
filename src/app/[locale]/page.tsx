@@ -1,17 +1,19 @@
-// src/app/page.tsx
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 // Card related imports are no longer needed directly here if ContentCard handles all card UI
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 // import { Badge } from "@/components/ui/badge";
-import Header from '../components/ui/fullHeader';       // Your Header component
-import LoginCard from '../components/ui/loginCard';
-import ContentCard from '../components/ui/contentCard'; // <<< IMPORT THE NEW ContentCard COMPONENT
+import Header from '../../components/ui/fullHeader';       // Your Header component
+import LoginCard from '../../components/ui/loginCard';
+import ContentCard from '../../components/ui/contentCard'; // <<< IMPORT THE NEW ContentCard COMPONENT
 import { createClient } from "@/utils/supabase/client";
 import { getPageRange } from "@/utils/pagination";
+import { useTranslation } from "@/i18n/useTranslation";
+import { getAllCategoryIds, getCategoryTranslationKey, type CategoryId } from '@/lib/categories';
 
 // This Item type definition should be consistent with the one in ContentCard.tsx
 // and what your /api/products endpoint returns.
@@ -22,7 +24,7 @@ type Item = {
   description: string;
   price: number;
   imageUrl: string;
-  category: string;
+  category: CategoryId;
   sellerId: number | string;
   seller: {
     name: string | null;
@@ -30,23 +32,62 @@ type Item = {
   };
 };
 
-const categories = ["Clothing", "Shoes", "Accessories", "Bags"];
 const PAGE_SIZE = 10;
 
 export default function StoreLandingPage() {
+  const { t, locale } = useTranslation();
+  const router = useRouter();
+  const categoryIds = getAllCategoryIds();
+  const categoryData = categoryIds.map(id => ({
+    id,
+    translationKey: getCategoryTranslationKey(id),
+    label: t(getCategoryTranslationKey(id) as any)
+  }));
+
   const { data: session, status } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [items, setItems] = useState<Item[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loginMode, setLoginMode] = useState<"login" | "signup">("login");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [languageCheckDone, setLanguageCheckDone] = useState(false);
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const isAuthenticated = !!session?.user;
+
+  // Check user's saved language preference and redirect if needed
+  useEffect(() => {
+    const checkUserLanguagePreference = async () => {
+      if (status === 'authenticated' && session?.user && !languageCheckDone) {
+        try {
+          const response = await fetch('/api/user/preferences');
+          if (response.ok) {
+            const data = await response.json();
+            const savedLanguage = data.language || 'english';
+            const preferredLocale = savedLanguage === 'french' ? 'fr' : 'en';
+            
+            if (preferredLocale !== locale) {
+              // User's saved preference is different from current locale
+              const currentPath = window.location.pathname.replace(`/${locale}`, '');
+              router.push(`/${preferredLocale}${currentPath}${window.location.search}`);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('Error checking language preference:', error);
+        }
+        setLanguageCheckDone(true);
+      } else if (status === 'unauthenticated') {
+        setLanguageCheckDone(true);
+      }
+    };
+
+    checkUserLanguagePreference();
+  }, [status, session, locale, router, languageCheckDone]);
 
   // useRouter is now used within ContentCard for navigation
   // const router = useRouter();
@@ -59,6 +100,9 @@ export default function StoreLandingPage() {
   });
 
   const fetchItems = useCallback(async () => {
+    // Don't fetch items until language check is complete to avoid unnecessary requests
+    if (!languageCheckDone) return;
+    
     setIsLoading(true);
     setError(null);
     const supabase = createClient();
@@ -110,15 +154,41 @@ export default function StoreLandingPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage]);
+  }, [currentPage, languageCheckDone]);
 
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
 
-  const handleCategoryClick = (category: string) => {
-    setSelectedCategory(category === selectedCategory ? null : category);
+  const handleCategoryClick = (categoryId: CategoryId) => {
+    setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
   };
+
+  // Show loading if we're still checking language preference
+  if (!languageCheckDone) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <Header
+          onSignInClick={() => {
+            setLoginMode("login");
+            setIsLoginOpen(true);
+          }}
+          onSignUpClick={() => {
+            setLoginMode("signup");
+            setIsLoginOpen(true);
+          }}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
+        <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // handleItemCardClick is now handled within ContentCard.tsx
 
@@ -144,22 +214,22 @@ export default function StoreLandingPage() {
             onClick={() => setSelectedCategory(null)}
             className="text-sm px-4 py-2.5 min-w-[80px]"
           >
-            All
+            {t('all')}
           </Button>
-          {categories.map((category) => (
+          {categoryData.map((category) => (
             <Button
-              variant={selectedCategory === category ? "default" : "outline"}
-              key={category}
-              onClick={() => handleCategoryClick(category)}
+              variant={selectedCategory === category.id ? "default" : "outline"}
+              key={category.id}
+              onClick={() => handleCategoryClick(category.id)}
               className="text-sm px-4 py-2.5 min-w-[80px]"
             >
-              {category}
+              {category.label}
             </Button>
           ))}
         </div>
 
-        {isLoading && <div className="text-center py-10"><p>Loading items...</p></div>}
-        {error && <div className="text-center py-10 text-red-500"><p>Error: {error}</p></div>}
+        {isLoading && <div className="text-center py-10"><p>{t('loadingItems')}</p></div>}
+        {error && <div className="text-center py-10 text-red-500"><p>{t('error')}: {error}</p></div>}
 
         {/* Items Grid - Optimized for larger cards on desktop */}
         {!isLoading && !error && filteredItems.length > 0 ? (
@@ -189,7 +259,7 @@ export default function StoreLandingPage() {
           </div>
         ) : (
           !isLoading && !error && <div className="text-center py-10 text-gray-500">
-            <p>No items found matching your criteria.</p>
+            <p>{t('noItemsFound')}</p>
           </div>
         )}
         {/* Pagination Controls */}
@@ -200,17 +270,17 @@ export default function StoreLandingPage() {
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             >
-              Prev
+              {t('prev')}
             </Button>
             <span className="text-sm">
-              Page {currentPage} of {totalPages}
+              {t('page')} {currentPage} {t('of')} {totalPages}
             </span>
             <Button
               variant="outline"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             >
-              Next
+              {t('next')}
             </Button>
           </div>
         )}
@@ -219,4 +289,4 @@ export default function StoreLandingPage() {
       {isLoginOpen && <LoginCard onClose={() => setIsLoginOpen(false)} initialMode={loginMode} />}
     </div>
   );
-}
+} 

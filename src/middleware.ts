@@ -1,70 +1,67 @@
 // middleware.ts
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
+// Internationalization settings
+const locales = ['en', 'fr'];
+const defaultLocale = 'en';
+
+// Authentication settings
 const LOGIN_PATH = '/'; // Assuming your login page is at the root
 const PUBLIC_PATHS = ['/', '/about', '/pricing']; // Your existing public page paths
-const CRITICAL_API_ROUTES = ['/api/auth/'];
-// Define /api/products as a specific public API endpoint for GET requests
-const PUBLIC_API_GET_PATHS = ['/api/products']; // New constant
 
-const secret = process.env.NEXTAUTH_SECRET;
+// Helper to get the locale from the request
+function getLocale(request: NextRequest): string {
+  const acceptLanguage = request.headers.get('accept-language') || '';
+  const preferredLanguages = acceptLanguage
+    .split(',')
+    .map((lang) => lang.split(';')[0].trim());
 
-interface UserSessionInfo {
-  isAuthenticated: boolean;
-  userId: string | null;
-}
-
-async function getUserSession(request: NextRequest): Promise<UserSessionInfo> {
-  const token = await getToken({ req: request, secret: secret });
-
-  if (!token) {
-    return { isAuthenticated: false, userId: null };
+  for (const lang of preferredLanguages) {
+    if (locales.includes(lang)) {
+      return lang;
+    }
   }
-
-  const userId = token.sub || token.userId as string | null; // Use token.sub as a common default for ID
-  return {
-    isAuthenticated: true,
-    userId: userId,
-  };
+  return defaultLocale;
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const method = request.method;
-  const session = await getUserSession(request);
 
-  // Only log in development and for specific debugging needs
-  // console.log(`Middleware: Path: ${pathname}, Method: ${method}, Auth=${session.isAuthenticated}`);
-
-  // --- Public API Access Control ---
-  // 2. Allow critical API routes (like auth routes)
-  const isCriticalApiRoute = CRITICAL_API_ROUTES.some(p => pathname.startsWith(p));
-  if (isCriticalApiRoute) {
+  // --- Skip API routes entirely - they should not have locale prefixes ---
+  if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
-  // 3. Allow specific public API GET paths
-  if (method === 'GET' && PUBLIC_API_GET_PATHS.includes(pathname)) {
+  // --- 1. Handle Locale Detection and Redirection ---
+  const pathnameHasLocale = locales.some(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  );
+
+  if (!pathnameHasLocale) {
+    const locale = getLocale(request);
+    const newPath = `/${locale}${pathname === '/' ? '' : pathname}`;
+    const url = new URL(newPath, request.url);
+    return NextResponse.redirect(url);
+  }
+
+  // --- 2. Handle Authentication for localized routes ---
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  const isAuthenticated = !!token;
+  const locale = pathname.split('/')[1];
+  const pathWithoutLocale = pathname.replace(`/${locale}`, '') || '/';
+  
+  // Check if the path (without locale) is public
+  const isPublicPath = PUBLIC_PATHS.includes(pathWithoutLocale);
+
+  // If user is authenticated or it's a public page, let them proceed
+  if (isAuthenticated || isPublicPath) {
     return NextResponse.next();
   }
 
-  // --- Authenticated Users ---
-  if (session.isAuthenticated) {
-    return NextResponse.next();
-  }
-
-  // --- Unauthenticated Users ---
-  const isPublicPagePath = PUBLIC_PATHS.includes(pathname);
-  if (isPublicPagePath) {
-    return NextResponse.next();
-  }
-
-  // If it's not a public page and user is not authenticated, redirect to login.
-  console.log(`Middleware: Unauth user, protected path ${pathname}. Redirecting to ${LOGIN_PATH}`);
-  const loginUrl = new URL(LOGIN_PATH, request.url);
-  if (pathname !== LOGIN_PATH && !pathname.startsWith('/_next')) { // Avoid callbackUrl for static assets or if already on login
+  // If it's not a public page and user is not authenticated, redirect to login
+  const loginUrl = new URL(`/${locale}${LOGIN_PATH === '/' ? '' : LOGIN_PATH}`, request.url);
+  if (pathWithoutLocale !== LOGIN_PATH) {
     loginUrl.searchParams.set('callbackUrl', request.nextUrl.href);
   }
   return NextResponse.redirect(loginUrl);
@@ -72,6 +69,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|assets/|.*\\.(?:png|jpg|jpeg|gif|svg|webmanifest)$).*)',
+    // Skip all internal paths (_next), API routes, and static files
+    '/((?!_next/static|_next/image|favicon.ico|images|assets|api|.*\\.(?:png|jpg|jpeg|gif|svg|webmanifest)$).*)',
   ],
 };

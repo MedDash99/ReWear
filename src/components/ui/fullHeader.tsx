@@ -4,9 +4,10 @@
 import React, { useState, useRef, useEffect } from 'react'; // Import useState, useRef, useEffect
 import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Search, Menu, X, Heart } from 'lucide-react';
 import { MessageIcon } from '../messaging';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface HeaderProps {
   searchQuery: string;
@@ -23,8 +24,10 @@ interface UserData {
 }
 
 const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInClick, onSignUpClick }) => {
+  const { t } = useTranslation();
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State for dropdown visibility
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
   const [isSearchOpen, setIsSearchOpen] = useState(false); // State for mobile search
@@ -104,14 +107,14 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
         <div className="hidden md:flex justify-between items-center">
           {/* Logo Link */}
           <Link href="/" className="text-xl font-bold text-teal-600">
-            ReWear
+            {t('rewear')}
           </Link>
 
           {/* Search Input */}
           <div className="flex-grow max-w-md mx-6">
             <input
               type="text"
-              placeholder="Search items and descriptions..."
+              placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -121,16 +124,16 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
           {/* Navigation */}
           <nav className="flex items-center space-x-4">
             {status === 'loading' && (
-              <div className="text-gray-500">Loading...</div>
+              <div className="text-gray-500">{t('loading')}</div>
             )}
 
             {status === 'unauthenticated' && (
               <>
                 <button onClick={handleSignUp} className="text-gray-600 hover:text-teal-600">
-                  Sign up
+                  {t('signUp')}
                 </button>
                 <button onClick={handleSignIn} className="text-gray-600 hover:text-teal-600">
-                  Log in
+                  {t('logIn')}
                 </button>
               </>
             )}
@@ -149,7 +152,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                     aria-haspopup="true"
                     aria-expanded={isDropdownOpen}
                   >
-                    Hi, {userData?.name || session.user?.name?.split(' ')[0] || 'User'}!
+                    {t('hi')}, {userData?.name || session.user?.name?.split(' ')[0] || 'User'}!
                     <svg className={`w-4 h-4 ml-1 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   </button>
 
@@ -161,21 +164,21 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                       onClick={() => setIsDropdownOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-teal-600"
                     >
-                      Profile
+                      {t('profile')}
                     </Link>
                     <Link
                       href="/dashboard/buyer/dashboard"
                       onClick={() => setIsDropdownOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-teal-600"
                     >
-                      Buyer Dashboard
+                      {t('buyerDashboard')}
                     </Link>
                     <Link
                       href="/dashboard/seller/dashboard"
                       onClick={() => setIsDropdownOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-teal-600"
                     >
-                      Seller Dashboard
+                      {t('sellerDashboard')}
                     </Link>
                     <Link
                       href="/favorites"
@@ -183,7 +186,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-teal-600"
                     >
                       <div className="flex items-center">
-                        Favorites
+                        {t('favorites')}
                       </div>
                     </Link>
                     <Link
@@ -191,20 +194,20 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                       onClick={() => setIsDropdownOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-teal-600"
                     >
-                      Messages
+                      {t('messages')}
                     </Link>
                     <Link
                       href="/settings"
                       onClick={() => setIsDropdownOpen(false)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-teal-600"
                     >
-                      Settings
+                      {t('settings')}
                     </Link>
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-600"
                     >
-                      Log out
+                      {t('logOut')}
                     </button>
                   </div>
                 )}
@@ -214,7 +217,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
 
             {/* Sell Now Button */}
             <button onClick={handleSellNow} className="bg-teal-500 text-white px-4 py-2 rounded-md hover:bg-teal-600 transition-colors whitespace-nowrap">
-              Sell now
+              {t('sellNow')}
             </button>
           </nav>
         </div>
@@ -224,7 +227,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="text-xl font-bold text-teal-600">
-              ReWear
+              {t('rewear')}
             </Link>
 
             {/* Mobile Controls */}
@@ -238,7 +241,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                 className={`p-3 rounded-lg transition-colors ${
                   isSearchOpen ? 'bg-teal-100 text-teal-600' : 'text-gray-600 hover:text-teal-600 hover:bg-gray-100'
                 }`}
-                aria-label="Toggle search"
+                aria-label={t('toggleSearch')}
               >
                 <Search className="h-5 w-5" />
               </button>
@@ -261,7 +264,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
             <div className="mt-4 pb-4 border-b">
               <input
                 type="text"
-                placeholder="Search items and descriptions..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-base"
@@ -273,7 +276,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
           {isMobileMenuOpen && (
             <div className="mt-4 pb-4 border-b space-y-1">
               {status === 'loading' && (
-                <div className="text-gray-500 text-center py-4">Loading...</div>
+                <div className="text-gray-500 text-center py-4">{t('loading')}</div>
               )}
 
               {status === 'unauthenticated' && (
@@ -282,13 +285,13 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                     onClick={handleSignUp}
                     className="block w-full text-left px-4 py-3 text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-lg"
                   >
-                    Sign up
+                    {t('signUp')}
                   </button>
                   <button
                     onClick={handleSignIn}
                     className="block w-full text-left px-4 py-3 text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-lg"
                   >
-                    Log in
+                    {t('logIn')}
                   </button>
                 </div>
               )}
@@ -296,28 +299,28 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
               {status === 'authenticated' && session && (
                 <div className="space-y-1">
                   <div className="px-4 py-3 text-base font-medium text-gray-700">
-                    Hi, {userData?.name || session.user?.name?.split(' ')[0] || 'User'}!
+                    {t('hi')}, {userData?.name || session.user?.name?.split(' ')[0] || 'User'}!
                   </div>
                   <Link
                     href="/dashboard"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block px-4 py-3 text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-lg"
                   >
-                    Profile
+                    {t('profile')}
                   </Link>
                   <Link
                     href="/dashboard/buyer/dashboard"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block px-4 py-3 text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-lg"
                   >
-                    Buyer Dashboard
+                    {t('buyerDashboard')}
                   </Link>
                   <Link
                     href="/dashboard/seller/dashboard"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block px-4 py-3 text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-lg"
                   >
-                    Seller Dashboard
+                    {t('sellerDashboard')}
                   </Link>
                   <Link
                     href="/favorites"
@@ -325,8 +328,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                     className="block px-4 py-3 text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-lg"
                   >
                     <div className="flex items-center">
-                      <Heart className="w-4 h-4 mr-2" />
-                      Favorites
+                      {t('favorites')}
                     </div>
                   </Link>
                   <Link
@@ -334,20 +336,20 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block px-4 py-3 text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-lg"
                   >
-                    Messages
+                    {t('messages')}
                   </Link>
                   <Link
                     href="/settings"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block px-4 py-3 text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-lg"
                   >
-                    Settings
+                    {t('settings')}
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg"
                   >
-                    Log out
+                    {t('logOut')}
                   </button>
                 </div>
               )}
@@ -358,7 +360,7 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                   onClick={handleSellNow}
                   className="w-full bg-teal-500 text-white px-4 py-3 rounded-lg hover:bg-teal-600 transition-colors font-medium"
                 >
-                  Sell now
+                  {t('sellNow')}
                 </button>
               </div>
             </div>

@@ -1,4 +1,5 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/client';
+import type { CategoryId } from '@/lib/categories';
 import { hash } from 'bcryptjs';
 
 // User interface - updated for Supabase types
@@ -14,6 +15,7 @@ export interface UserFromDB {
   wishlist: string | null;
   address: string | null;
   phone: string | null;
+  language: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,7 +44,8 @@ export const createUser = async (
         cart: null,
         wishlist: null,
         address: null,
-        phone: null
+        phone: null,
+        language: 'english' // Default language for new users
       })
       .select()
       .single();
@@ -114,7 +117,7 @@ export const createItem = async (item: {
   name: string;
   description?: string;
   price: number;
-  category?: string;
+  category?: CategoryId;
   image_url?: string;
   cloudinary_public_id?: string;
   status?: string;
@@ -353,7 +356,7 @@ export const getUserFavoritesWithItems = async (userId: string) => {
 
 // Additional item functions for API routes
 export const getItemById = async (id: number) => {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('items')
     .select(`
@@ -381,7 +384,7 @@ export const updateItem = async (id: number, updates: {
   name?: string;
   description?: string;
   price?: number;
-  category?: string;
+  category?: CategoryId;
   status?: string;
 }) => {
   const supabase = await createClient();
@@ -421,4 +424,35 @@ export const deleteItem = async (id: number) => {
   }
 
   return data;
+};
+
+// User preferences functions
+export const updateUserLanguage = async (userId: string, language: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('users')
+    .update({ language })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating user language:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateUserGoogleId = async (userId: string, googleId: string) => {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('users')
+    .update({ google_id: googleId })
+    .eq('id', userId);
+
+  if (error) {
+    console.error("Error updating user Google ID:", error);
+    throw error;
+  }
 }; 

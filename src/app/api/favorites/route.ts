@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
 
 // GET /api/favorites - Get user's favorites
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
       }
 
       // Transform the data to match the expected format
-      const favorites = data?.map(fav => {
+      const favorites = data?.map((fav: any) => {
         const item = Array.isArray(fav.items) ? fav.items[0] : fav.items;
         const user = Array.isArray(item?.users) ? item?.users[0] : item?.users;
         
@@ -82,7 +82,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ message: 'Failed to fetch favorites' }, { status: 500 });
       }
 
-      const favoriteIds = data?.map(fav => parseInt(String(fav.item_id))) || [];
+      const favoriteIds = data?.map((fav: any) => parseInt(String(fav.item_id))) || [];
       console.log("GET /api/favorites - Returning favorite IDs:", { userId, favoriteIds });
       return NextResponse.json({ favoriteIds });
     }

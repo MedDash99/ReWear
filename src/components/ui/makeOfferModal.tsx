@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export default function MakeOfferModal({
   isOpen,
@@ -26,42 +27,55 @@ export default function MakeOfferModal({
   maxPrice: number;
   isSubmitting?: boolean;
 }) {
+  const { t } = useTranslation();
   const [offer, setOffer] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = () => {
+    if (!offer.trim()) {
+      setError('Offer amount is required.');
+      return;
+    }
+
     const numericOffer = parseFloat(offer);
     if (isNaN(numericOffer) || numericOffer <= 0) {
-      setError('Please enter a valid offer.');
-    } else if (numericOffer >= maxPrice) {
-      setError('Offer must be lower than the listed price.');
-    } else {
-      setError('');
-      onSubmit(numericOffer, message);
+      setError(t('enterValidOffer'));
+      return;
     }
+
+    if (numericOffer >= maxPrice) {
+      setError(t('offerTooHigh'));
+      return;
+    }
+
+    setError('');
+    onSubmit(numericOffer, message);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Make an Offer</DialogTitle>
+          <DialogTitle>{t('makeOfferModalTitle')}</DialogTitle>
           <DialogDescription>
-            Suggest a lower price and include a message if you'd like.
+            {t('makeOfferModalDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
           <Input
             type="number"
-            placeholder="Your offer (₪)"
+            placeholder={t('yourOffer')}
             value={offer}
             onChange={(e) => setOffer(e.target.value)}
             disabled={isSubmitting}
+            required
+            min={1}
+            step="0.01"
           />
           <Textarea
-            placeholder="Optional message to the seller"
+            placeholder={t('optionalMessage')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             disabled={isSubmitting}
@@ -71,10 +85,10 @@ export default function MakeOfferModal({
 
         <DialogFooter className="pt-4">
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting...' : 'Submit Offer'}
+            {isSubmitting ? t('submitting') : t('submitOffer')}
           </Button>
         </DialogFooter>
       </DialogContent>

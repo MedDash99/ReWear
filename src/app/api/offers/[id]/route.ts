@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 export async function PATCH(
   request: NextRequest,
@@ -45,7 +45,8 @@ export async function PATCH(
     }
 
     // Check if user owns the product
-    if (offer.items?.seller_id !== userId) {
+    const item = Array.isArray(offer.items) ? offer.items[0] : offer.items;
+    if (item?.seller_id !== userId) {
       return NextResponse.json({ message: "Not authorized to update this offer" }, { status: 403 });
     }
 
@@ -96,7 +97,7 @@ export async function PATCH(
       offer: {
         id: offer.id,
         status: status,
-        product_name: offer.items?.name
+        product_name: item?.name
       }
     }, { status: 200 });
 
@@ -146,6 +147,9 @@ export async function GET(
     }
 
     // Transform to match expected format
+    const item = Array.isArray(offer.items) ? offer.items[0] : offer.items;
+    const user = Array.isArray(item?.users) ? item?.users[0] : item?.users;
+    
     const transformedOffer = {
       id: offer.id,
       offer_price: offer.offer_price,
@@ -153,10 +157,10 @@ export async function GET(
       status: offer.status,
       created_at: offer.created_at,
       updated_at: offer.updated_at,
-      product_name: offer.items?.name,
-      product_price: offer.items?.price,
-      product_image: offer.items?.image_url,
-      seller_name: offer.items?.users?.name
+      product_name: item?.name,
+      product_price: item?.price,
+      product_image: item?.image_url,
+      seller_name: user?.name
     };
 
     return NextResponse.json(transformedOffer, { status: 200 });

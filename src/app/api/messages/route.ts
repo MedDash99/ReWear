@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
 import { generateConversationId, findUserById } from '@/lib/supabase';
 
@@ -55,12 +55,12 @@ export async function GET(request: NextRequest) {
 
     // Get unique user IDs from messages
     const userIds = [...new Set([
-      ...allMessages.map(msg => msg.sender_id),
-      ...allMessages.map(msg => msg.receiver_id)
+      ...allMessages.map((msg: any) => msg.sender_id),
+      ...allMessages.map((msg: any) => msg.receiver_id)
     ])];
 
     // Fetch user data for all participants
-    const userPromises = userIds.map(id => findUserById(id));
+    const userPromises = userIds.map((id: string) => findUserById(id));
     const users = await Promise.all(userPromises);
     const userMap = new Map();
     users.forEach((user, index) => {
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform messages with actual user data
-    const messagesWithUserData = (allMessages || []).map(message => ({
+    const messagesWithUserData = (allMessages || []).map((message: any) => ({
       ...message,
       sender: userMap.get(message.sender_id) || {
         id: message.sender_id,
