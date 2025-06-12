@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
 import { findUserById } from '@/lib/supabase';
 
@@ -61,12 +61,12 @@ export async function GET(request: NextRequest) {
     
     for (const [participantKey, { participants, latestMessage, messages, conversationIds }] of participantPairsMap.entries()) {
       // Get unread count for this user across all conversation IDs for this participant pair
-      const unreadCount = messages.filter(msg => 
+      const unreadCount = messages.filter((msg: any) => 
         msg.receiver_id === session.user.id && !msg.read
       ).length;
 
       // Fetch user data for participants
-      const userPromises = participants.map(id => findUserById(id));
+      const userPromises = participants.map((id: string) => findUserById(id));
       const users = await Promise.all(userPromises);
       const userMap = new Map();
       users.forEach((user, index) => {
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       });
 
       // Create participants array with actual user data
-      const participantObjects = participants.map(id => 
+      const participantObjects = participants.map((id: string) => 
         userMap.get(id) || {
           id,
           name: 'Unknown User',

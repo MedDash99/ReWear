@@ -7,7 +7,6 @@ import { ConversationList } from '@/components/messaging/ConversationList';
 import { ChatModal } from '@/components/messaging/ChatModal';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, MessageCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
 import MinimalHeader from '@/components/ui/minimalHeader';
 
 export default function MessagesPage() {
@@ -27,16 +26,11 @@ export default function MessagesPage() {
           title="Messages"
         />
         <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 64px)' }}>
-          <motion.div 
-            className="text-center p-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
+          <div className="text-center p-8 transition-all duration-300 ease-in-out">
             <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h1 className="text-2xl font-semibold text-gray-900 mb-2">Sign In Required</h1>
             <p className="text-gray-600">Please sign in to view your messages.</p>
-          </motion.div>
+          </div>
         </div>
       </div>
     );
@@ -60,16 +54,10 @@ export default function MessagesPage() {
         showBackButton={true} 
         backHref="/" 
         backText="Home" 
-        //title="Messages"
       />
       <div className="max-w-7xl mx-auto" style={{ height: 'calc(100vh - 64px)' }}>
         {/* Messages Header */}
-        <motion.div 
-          className="bg-white border-b border-gray-200 px-4 py-3 sm:px-6"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
+        <div className="bg-white border-b border-gray-200 px-4 py-3 sm:px-6 transition-all duration-300 ease-in-out">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {selectedConversationId && (
@@ -92,19 +80,14 @@ export default function MessagesPage() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Main Content */}
         <div className="flex" style={{ height: 'calc(100vh - 124px)' }}>
           {/* Conversations List - Hidden on mobile when conversation is selected */}
-          <motion.div 
-            className={`w-full lg:w-1/3 xl:w-1/4 bg-white border-r border-gray-200 ${
-              selectedConversationId ? 'hidden lg:block' : 'block'
-            }`}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-          >
+          <div className={`w-full lg:w-1/3 xl:w-1/4 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
+            selectedConversationId ? 'hidden lg:block' : 'block'
+          }`}>
             <div className="h-full overflow-y-auto">
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -128,9 +111,9 @@ export default function MessagesPage() {
                     if (!otherParticipant) return null;
 
                     return (
-                      <motion.div
+                      <div
                         key={conversation.id}
-                        className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                        className={`p-4 cursor-pointer hover:bg-gray-50 transition-all duration-200 ${
                           selectedConversationId === conversation.id ? 'bg-teal-50 border-r-2 border-teal-600' : ''
                         }`}
                         onClick={() => handleConversationSelect(
@@ -138,8 +121,6 @@ export default function MessagesPage() {
                           otherParticipant.id, 
                           conversation.item?.id
                         )}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
                       >
                         <div className="flex items-start gap-3">
                           {/* Avatar */}
@@ -181,23 +162,18 @@ export default function MessagesPage() {
                             )}
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     );
                   })}
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
 
           {/* Chat Area - Full width on mobile when conversation selected */}
-          <motion.div 
-            className={`flex-1 ${
-              selectedConversationId ? 'block' : 'hidden lg:flex lg:items-center lg:justify-center'
-            } bg-white`}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-          >
+          <div className={`flex-1 transition-all duration-300 ease-in-out ${
+            selectedConversationId ? 'block' : 'hidden lg:flex lg:items-center lg:justify-center'
+          } bg-white`}>
             {selectedConversationId && selectedOtherUserId ? (
               <div className="h-full">
                 <ChatModal
@@ -218,7 +194,7 @@ export default function MessagesPage() {
                 </p>
               </div>
             )}
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>

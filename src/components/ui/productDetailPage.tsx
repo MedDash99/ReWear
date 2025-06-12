@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { motion } from 'framer-motion';
 import { MessageSellerButton } from '@/components/messaging/MessageSellerButton';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -34,12 +33,7 @@ export default function ProductDetail({ product, onMakeOffer, isOwner }: Product
   
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
-      <motion.div
-        className="rounded-xl overflow-hidden"
-        initial={{ opacity: 0, x: -50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.4 }}
-      >
+      <div className="rounded-xl overflow-hidden transition-all duration-300 ease-in-out">
         <div className="relative">
           <Image
             src={product.imageUrl}
@@ -54,14 +48,9 @@ export default function ProductDetail({ product, onMakeOffer, isOwner }: Product
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
 
-      <motion.div
-        className="space-y-4 sm:space-y-6"
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.4 }}
-      >
+      <div className="space-y-4 sm:space-y-6 transition-all duration-300 ease-in-out">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-2">{product.name}</h1>
           <p className="text-xl sm:text-2xl text-teal-600 font-bold">₪{product.price.toFixed(2)}</p>
@@ -77,13 +66,13 @@ export default function ProductDetail({ product, onMakeOffer, isOwner }: Product
         ) : !isOwner ? (
           <div className="mb-4 sm:mb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
-              <Button className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg text-sm sm:text-base">
+              <Button className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg text-sm sm:text-base transition-colors duration-200">
                 {t('buyNow')}
               </Button>
               {onMakeOffer && (
                 <Button 
                   variant="outline" 
-                  className="border-teal-600 text-teal-600 hover:bg-teal-50 px-6 py-3 rounded-lg text-sm sm:text-base"
+                  className="border-teal-600 text-teal-600 hover:bg-teal-50 px-6 py-3 rounded-lg text-sm sm:text-base transition-colors duration-200"
                   onClick={onMakeOffer}
                 >
                   {t('makeOffer')}
@@ -99,7 +88,7 @@ export default function ProductDetail({ product, onMakeOffer, isOwner }: Product
                     itemId={product.id || ''}
                     itemTitle={product.name}
                     variant="outline"
-                    className="border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-3 rounded-lg text-sm sm:text-base w-full"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-3 rounded-lg text-sm sm:text-base w-full transition-colors duration-200"
                   />
                 </div>
               </div>
@@ -136,7 +125,7 @@ export default function ProductDetail({ product, onMakeOffer, isOwner }: Product
             </p>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

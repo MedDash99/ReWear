@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the data to match the expected format
-    const transformedOffers = offers?.map(offer => ({
+    const transformedOffers = offers?.map((offer: any) => ({
       id: offer.id,
       offer_price: offer.offer_price,
       message: offer.message,

@@ -5,7 +5,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label"
 import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { signIn } from "next-auth/react"; 
 import { X } from "lucide-react"; 
 import { useRouter } from "next/navigation";
@@ -138,10 +137,8 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
   };
 
   return (
-    // Using fixed positioning and background overlay from LoginCard
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-sm sm:max-w-md shadow-2xl rounded-2xl p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">
-        {/* Close button from LoginCard */}
         {onClose && (
           <button
             onClick={onClose}
@@ -157,151 +154,133 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
             {isLogin ? t('login') : t('signUp')}
           </h2>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={isLogin ? "loginForm" : "signupForm"} // Changed key for clarity
-              initial={{ opacity: 0, y: isLogin ? -20 : 20 }} // Added subtle y animation
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: isLogin ? 20 : -20 }} // Added subtle y animation
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="space-y-3 sm:space-y-4"
-            >
-              <div>
-                <Label htmlFor="email" className="text-sm">{t('emailLabel')}</Label>
+          <div className="space-y-3 sm:space-y-4 transition-all duration-300 ease-in-out">
+            <div>
+              <Label htmlFor="email" className="text-sm">{t('emailLabel')}</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder={t('emailPlaceholder')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                autoComplete="email"
+                className="mt-1"
+              />
+            </div>
+
+            {!isLogin && (
+              <div className="transition-all duration-300 ease-in-out">
+                <Label htmlFor="username" className="text-sm">{t('usernameLabel')}</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder={t('emailPlaceholder')}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading} // Disable input when loading
-                  autoComplete="email"
+                  id="username"
+                  type="text"
+                  placeholder={t('usernamePlaceholder')}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={isLoading}
+                  autoComplete="username"
                   className="mt-1"
                 />
               </div>
+            )}
 
-              {!isLogin && (
-                <div>
-                  <Label htmlFor="username" className="text-sm">{t('usernameLabel')}</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder={t('usernamePlaceholder')}
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    disabled={isLoading}
-                    autoComplete="username"
-                    className="mt-1"
-                  />
-                </div>
-              )}
+            <div>
+              <Label htmlFor="password" className="text-sm">{t('passwordLabel')}</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder={t('passwordPlaceholder')}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                autoComplete={isLogin ? "current-password" : "new-password"}
+                className="mt-1"
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="password" className="text-sm">{t('passwordLabel')}</Label>
+            {!isLogin && (
+              <div className="transition-all duration-300 ease-in-out">
+                <Label htmlFor="confirmPassword" className="text-sm">{t('confirmPasswordLabel')}</Label>
                 <Input
-                  id="password"
+                  id="confirmPassword"
                   type="password"
                   placeholder={t('passwordPlaceholder')}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading} // Disable input when loading
-                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isLoading}
+                  autoComplete="new-password"
                   className="mt-1"
                 />
               </div>
+            )}
 
-              {!isLogin && ( // Show Confirm Password only on Sign Up
-                <div>
-                  <Label htmlFor="confirmPassword" className="text-sm">{t('confirmPasswordLabel')}</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder={t('passwordPlaceholder')}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading} // Disable input when loading
-                    autoComplete="new-password"
-                    className="mt-1"
-                  />
-                </div>
-              )}
-
-              {isLogin && ( // Show "Remember me" and "Forgot password" only on Login
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="remember-me"
-                      checked={rememberMe}
-                      onCheckedChange={() => setRememberMe(!rememberMe)}
-                      disabled={isLoading} // Disable checkbox when loading
-                    />
-                    <Label htmlFor="remember-me" className="text-xs sm:text-sm">
-                      {t('rememberMe')}
-                    </Label>
-                  </div>
-                  <button
-                    className="text-xs sm:text-sm text-blue-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            {isLogin && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember-me"
+                    checked={rememberMe}
+                    onCheckedChange={() => setRememberMe(!rememberMe)}
                     disabled={isLoading}
-                  >
-                    {t('forgotPassword')}
-                  </button>
+                  />
+                  <Label htmlFor="remember-me" className="text-xs sm:text-sm">
+                    {t('rememberMe')}
+                  </Label>
                 </div>
+                <button
+                  className="text-xs sm:text-sm text-blue-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading}
+                >
+                  {t('forgotPassword')}
+                </button>
+              </div>
+            )}
+
+            <Button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white transition-colors duration-200"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  {t('loading')}
+                </div>
+              ) : (
+                isLogin ? t('login') : t('signUp')
               )}
+            </Button>
 
-              <Button
-                className="w-full py-2.5"
-                onClick={handleSubmit}
-                disabled={isLoading} // Disable button when loading
-              >
-                {isLoading
-                  ? (isLogin ? t('login') : t('signUp'))
-                  : (isLogin ? t('login') : t('signUp'))}
-              </Button>
-
-              <div className="flex items-center justify-center gap-2">
-                <hr className="flex-grow border-gray-300" /> {/* Added line */}
-                <span className="text-xs sm:text-sm text-gray-500">{t('or')}</span>
-                <hr className="flex-grow border-gray-300" /> {/* Added line */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
               </div>
-
-              <Button
-                variant="outline"
-                className="w-full flex items-center justify-center gap-2 py-2.5"
-                onClick={handleGoogleLogin}
-                disabled={isLoading} // Disable button when loading
-              >
-                <FcGoogle size={20} /> 
-                <span className="hidden sm:inline">{t('continueWith')} Google</span>
-                <span className="sm:hidden">Google</span>
-              </Button>
-
-              <div className="text-center text-xs sm:text-sm text-gray-600">
-                {isLogin ? (
-                  <span>
-                    {t('dontHaveAccount')} {" "}
-                    <button
-                      className="text-blue-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={toggleAuthMode}
-                      disabled={isLoading}
-                    >
-                      {t('signUp')}
-                    </button>
-                  </span>
-                ) : (
-                  <span>
-                    {t('alreadyHaveAccount')} {" "}
-                    <button
-                      className="text-blue-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={toggleAuthMode}
-                      disabled={isLoading}
-                    >
-                      {t('login')}
-                    </button>
-                  </span>
-                )}
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">{t('or')}</span>
               </div>
-            </motion.div>
-          </AnimatePresence>
+            </div>
+
+            <Button
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              variant="outline"
+              className="w-full flex items-center justify-center space-x-2 border-gray-300 hover:bg-gray-50 transition-colors duration-200"
+            >
+              <FcGoogle className="w-5 h-5" />
+              <span>{t('signInWithGoogle')}</span>
+            </Button>
+
+            <div className="text-center text-sm">
+              <button
+                onClick={toggleAuthMode}
+                disabled={isLoading}
+                className="text-teal-600 hover:text-teal-700 transition-colors duration-200"
+              >
+                {isLogin ? t('dontHaveAccount') : t('alreadyHaveAccount')}
+              </button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

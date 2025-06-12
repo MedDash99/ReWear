@@ -15,7 +15,17 @@ cloudinary.config({
  * @returns Upload result from Cloudinary
  */
 export async function uploadToCloudinary(filePathOrBuffer: string | Buffer, options: any = {}) {
-  return await cloudinary.uploader.upload(filePathOrBuffer, {
+  // If it's a Buffer, convert it to a data URI that Cloudinary can handle
+  let uploadParam: string;
+  if (Buffer.isBuffer(filePathOrBuffer)) {
+    // Convert Buffer to base64 data URI
+    const base64 = filePathOrBuffer.toString('base64');
+    uploadParam = `data:image/jpeg;base64,${base64}`;
+  } else {
+    uploadParam = filePathOrBuffer;
+  }
+
+  return await cloudinary.uploader.upload(uploadParam, {
     folder: process.env.NEXT_PUBLIC_CLOUDINARY_FOLDER,
     ...options,
   });

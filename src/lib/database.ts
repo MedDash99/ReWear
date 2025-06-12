@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@/utils/supabase/client';
 import type { CategoryId } from '@/lib/categories';
 import { hash } from 'bcryptjs';
 
@@ -356,7 +356,7 @@ export const getUserFavoritesWithItems = async (userId: string) => {
 
 // Additional item functions for API routes
 export const getItemById = async (id: number) => {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('items')
     .select(`
@@ -442,4 +442,17 @@ export const updateUserLanguage = async (userId: string, language: string) => {
   }
 
   return data;
+};
+
+export const updateUserGoogleId = async (userId: string, googleId: string) => {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('users')
+    .update({ google_id: googleId })
+    .eq('id', userId);
+
+  if (error) {
+    console.error("Error updating user Google ID:", error);
+    throw error;
+  }
 }; 

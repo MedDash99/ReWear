@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createItem } from '@/lib/database'; // Updated import
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { isValidCategoryId, type CategoryId } from '@/lib/categories';
 
 // Import centralized Cloudinary utilities
