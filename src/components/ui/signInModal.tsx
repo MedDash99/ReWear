@@ -5,6 +5,7 @@ import React from 'react';
 import { signIn } from 'next-auth/react';
 import { FcGoogle } from 'react-icons/fc'; // Assuming react-icons is installed
 import { Button } from "@/components/ui/button"; // Assuming Shadcn Button
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface SignInModalProps {
 }
 
 const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   if (!isOpen) {
     return null; // Don't render the modal if not open
   }
@@ -36,11 +38,11 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose }) => {
         {/* Modal Content */}
         <div className="flex flex-col items-center text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            Welcome to <span className="text-teal-600">ReWear</span>
+            {t('welcomeTo')} <span className="text-teal-600">{t('rewear')}</span>
           </h2>
 
           <p className="text-gray-700 mb-6">
-            Sign in to discover unique pre-loved fashion and connect with sellers.
+            {t('signInToDiscover')}
           </p>
 
           {/* Sign-in Button */}
@@ -50,7 +52,7 @@ const SignInModal: React.FC<SignInModalProps> = ({ isOpen, onClose }) => {
             className="flex items-center justify-center px-6 py-3 text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-lg transition duration-150 ease-in-out"
           >
             <FcGoogle className="mr-3 h-5 w-5" aria-hidden="true" /> {/* Adjust icon size */}
-            Sign in with Google
+            {t('signInWithGoogle')}
           </Button>
         </div>
       </div>

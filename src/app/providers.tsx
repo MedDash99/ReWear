@@ -4,6 +4,7 @@
 import { SessionProvider } from "next-auth/react";
 import React from "react";
 import { MessagingProvider } from "../contexts/MessagingContext";
+import { Toaster } from "sonner";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ export default function Providers({ children }: ProvidersProps) {
     <SessionProvider>
       <MessagingProvider>
         {children}
+        <Toaster position="top-right" />
       </MessagingProvider>
     </SessionProvider>
   );

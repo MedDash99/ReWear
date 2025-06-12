@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { signIn } from "next-auth/react"; 
 import { X } from "lucide-react"; 
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/i18n/useTranslation";
 
 // Interface for props, including onClose from LoginCard
 interface AuthCardProps {
@@ -17,6 +18,7 @@ interface AuthCardProps {
 }
 
 export default function AuthCard({ onClose, initialMode = "login" }: AuthCardProps) {
+  const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(initialMode === "login");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState(""); // Added username state
@@ -32,19 +34,19 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
     setIsLoading(true);
     if (!isLogin) { // Handle Sign Up
       if (!username.trim()) {
-        alert("Username is required.");
+        alert(t('usernameRequired'));
         setIsLoading(false);
         return;
       }
       if (password !== confirmPassword) {
-        alert("Passwords do not match.");
+        alert(t('passwordsDoNotMatch'));
         setIsLoading(false);
         return;
       }
       
       // Add password validation
       if (!password.trim()) {
-        alert("Password cannot be empty");
+        alert(t('passwordCannotBeEmpty'));
         setIsLoading(false);
         return;
       }
@@ -59,7 +61,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
         const data = await signUpResponse.json();
 
         if (!signUpResponse.ok) {
-          throw new Error(data.error || "Sign up failed");
+          throw new Error(data.error || t('signUpFailed'));
         }
 
         // After successful sign-up, automatically sign them in
@@ -70,7 +72,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError(t('invalidEmailOrPassword'));
       } else if (result?.ok) {
         router.push("/dashboard/seller/dashboard");
       } else {
@@ -78,14 +80,14 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
         }
       } catch (error) {
         console.error("Sign up error:", error);
-        alert(`Sign up failed: ${error instanceof Error ? error.message : String(error)}`);
+        alert(`${t('signUpFailed')}: ${error instanceof Error ? error.message : String(error)}`);
       } finally {
         setIsLoading(false);
       }
     } else { // Handle Login
       // Add password validation
       if (!password.trim()) {
-        alert("Password cannot be empty");
+        alert(t('passwordCannotBeEmpty'));
         setIsLoading(false);
         return;
       }
@@ -99,14 +101,14 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
 
         if (result?.error) {
           console.error("Login failed:", result.error);
-          alert("Login failed: " + result.error);
+          alert(t('loginFailed') + result.error);
         } else if (result?.ok) {
           console.log("Login successful");
           onClose?.();
       }
     } catch (error) {
       console.error("Login error:", error);
-        alert("An unexpected error occurred during login.");
+        alert(t('unexpectedErrorLogin'));
     } finally {
       setIsLoading(false);
       }
@@ -122,7 +124,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
       });
     } catch (error) {
       console.error("Google login error:", error);
-      alert("An unexpected error occurred during Google login.");
+      alert(t('unexpectedErrorGoogleLogin'));
       setIsLoading(false);
     }
   };
@@ -152,7 +154,7 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
         )}
         <CardContent className="space-y-4 sm:space-y-6 p-0">
           <h2 className="text-xl sm:text-2xl font-bold text-center pt-2">
-            {isLogin ? "Login" : "Sign Up"}
+            {isLogin ? t('login') : t('signUp')}
           </h2>
 
           <AnimatePresence mode="wait">
@@ -165,11 +167,11 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
               className="space-y-3 sm:space-y-4"
             >
               <div>
-                <Label htmlFor="email" className="text-sm">Email</Label>
+                <Label htmlFor="email" className="text-sm">{t('emailLabel')}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder={t('emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading} // Disable input when loading
@@ -180,11 +182,11 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
 
               {!isLogin && (
                 <div>
-                  <Label htmlFor="username" className="text-sm">Username</Label>
+                  <Label htmlFor="username" className="text-sm">{t('usernameLabel')}</Label>
                   <Input
                     id="username"
                     type="text"
-                    placeholder="Choose a username"
+                    placeholder={t('usernamePlaceholder')}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     disabled={isLoading}
@@ -195,11 +197,11 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
               )}
 
               <div>
-                <Label htmlFor="password" className="text-sm">Password</Label>
+                <Label htmlFor="password" className="text-sm">{t('passwordLabel')}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={t('passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading} // Disable input when loading
@@ -210,11 +212,11 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
 
               {!isLogin && ( // Show Confirm Password only on Sign Up
                 <div>
-                  <Label htmlFor="confirmPassword" className="text-sm">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-sm">{t('confirmPasswordLabel')}</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder={t('passwordPlaceholder')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isLoading} // Disable input when loading
@@ -234,14 +236,14 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                       disabled={isLoading} // Disable checkbox when loading
                     />
                     <Label htmlFor="remember-me" className="text-xs sm:text-sm">
-                      Remember me
+                      {t('rememberMe')}
                     </Label>
                   </div>
                   <button
                     className="text-xs sm:text-sm text-blue-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isLoading}
                   >
-                    Forgot password?
+                    {t('forgotPassword')}
                   </button>
                 </div>
               )}
@@ -252,17 +254,13 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                 disabled={isLoading} // Disable button when loading
               >
                 {isLoading
-                  ? isLogin
-                    ? "Logging in..."
-                    : "Creating account..."
-                  : isLogin
-                  ? "Login"
-                  : "Create Account"}
+                  ? (isLogin ? t('login') : t('signUp'))
+                  : (isLogin ? t('login') : t('signUp'))}
               </Button>
 
               <div className="flex items-center justify-center gap-2">
                 <hr className="flex-grow border-gray-300" /> {/* Added line */}
-                <span className="text-xs sm:text-sm text-gray-500">or</span>
+                <span className="text-xs sm:text-sm text-gray-500">{t('or')}</span>
                 <hr className="flex-grow border-gray-300" /> {/* Added line */}
               </div>
 
@@ -273,31 +271,31 @@ export default function AuthCard({ onClose, initialMode = "login" }: AuthCardPro
                 disabled={isLoading} // Disable button when loading
               >
                 <FcGoogle size={20} /> 
-                <span className="hidden sm:inline">Continue with Google</span>
+                <span className="hidden sm:inline">{t('continueWith')} Google</span>
                 <span className="sm:hidden">Google</span>
               </Button>
 
               <div className="text-center text-xs sm:text-sm text-gray-600">
                 {isLogin ? (
                   <span>
-                    Don't have an account?{" "}
+                    {t('dontHaveAccount')} {" "}
                     <button
                       className="text-blue-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={toggleAuthMode}
                       disabled={isLoading}
                     >
-                      Sign Up
+                      {t('signUp')}
                     </button>
                   </span>
                 ) : (
                   <span>
-                    Already have an account?{" "}
+                    {t('alreadyHaveAccount')} {" "}
                     <button
                       className="text-blue-500 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={toggleAuthMode}
                       disabled={isLoading}
                     >
-                      Login
+                      {t('login')}
                     </button>
                   </span>
                 )}

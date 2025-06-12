@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSession } from "next-auth/react";
+import { getAllCategoryIds, getCategoryTranslationKey, type CategoryId } from '@/lib/categories';
+import { useTranslation } from '@/i18n/useTranslation';
 // To use useRouter for redirection after success, uncomment the next line
 // import { useRouter } from 'next/navigation';
 
@@ -77,14 +79,22 @@ const FormSkeleton = () => (
 );
 
 const ProductListingForm: React.FC<ProductListingFormProps> = () => {
+  const { t } = useTranslation();
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [category, setCategory] = useState<string>('');
+  const [category, setCategory] = useState<CategoryId | ''>('');
   const [price, setPrice] = useState<string>(''); // Stored as string from input, parsed on submit
   const [images, setImages] = useState<CloudinaryImageState[]>([]); // Array to hold Cloudinary image states
   const { data: session, status } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+
+  // Get category data for dropdown
+  const categoryIds = getAllCategoryIds();
+  const categoryData = categoryIds.map(id => ({
+    id,
+    label: t(getCategoryTranslationKey(id) as any)
+  }));
 
   // Optional: if you use useRouter for redirection after success, uncomment the next line
   // const router = useRouter();
@@ -327,15 +337,16 @@ const ProductListingForm: React.FC<ProductListingFormProps> = () => {
 
               <div>
                 <Label htmlFor="category" className="text-base font-medium text-gray-700 mb-2 block">Category</Label>
-                <Select value={category} onValueChange={setCategory} required>
+                <Select value={category} onValueChange={(value: string) => setCategory(value as CategoryId)} required>
                   <SelectTrigger className="h-12 text-base border-gray-300 focus:border-teal-500 focus:ring-teal-500">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Clothing">Clothing</SelectItem>
-                    <SelectItem value="Shoes">Shoes</SelectItem>
-                    <SelectItem value="Accessories">Accessories</SelectItem>
-                    <SelectItem value="Bags">Bags</SelectItem>
+                    {categoryData.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
