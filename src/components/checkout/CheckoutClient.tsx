@@ -136,7 +136,10 @@ export default function CheckoutClient({ initialItem }: CheckoutClientProps) {
           </div>
           <div className="flex items-center mt-2">
             <Avatar>
-              <AvatarImage src={item.users.profile_image_url} alt={item.users.name} />
+              <AvatarImage 
+                src={`${item.users.profile_image_url}?v=${Date.now()}`} 
+                alt={item.users.name} 
+              />
               <AvatarFallback>{item.users.name.substring(0, 2)}</AvatarFallback>
             </Avatar>
             <span className="ml-2">{item.users.name}</span>

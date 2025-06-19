@@ -1,8 +1,9 @@
 // src/app/seller-dashboard/page.tsx
 'use client';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Pencil, Trash2, DollarSign, Inbox, CheckCircle, XCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -128,6 +129,146 @@ const MessageSkeleton = () => (
   </li>
 );
 
+// Accordion Components for Offers
+const ItemAccordion: React.FC<{ 
+  item: OfferOnProduct, 
+  isOpen: boolean, 
+  onToggle: () => void,
+  onOfferAction: (offerId: string, action: 'accepted' | 'rejected') => Promise<void>
+}> = ({ item, isOpen, onToggle, onOfferAction }) => {
+    const pendingOffersCount = item.offers.filter(o => o.status === 'pending').length;
+
+    return (
+        <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            {/* Accordion Header/Trigger */}
+            <button 
+                className="w-full flex items-center p-4 cursor-pointer hover:bg-gray-50 transition-colors text-left border-none bg-transparent"
+                onClick={() => {
+                    console.log('Accordion clicked for item:', item.product_id);
+                    onToggle();
+                }}
+                type="button"
+            >
+                <img 
+                    src={item.product_image} 
+                    alt={item.product_name} 
+                    className="w-16 h-16 rounded-lg object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/64x64/e2e8f0/e2e8f0?text='; }}
+                />
+                <div className="flex-1 ml-4">
+                    <p className="font-semibold text-gray-800 text-lg">{item.product_name}</p>
+                    <p className="text-gray-500">Listed Price: ₪{item.product_price}</p>
+                </div>
+                <div className="flex items-center space-x-3">
+                     {pendingOffersCount > 0 && (
+                        <span className="text-sm font-semibold text-teal-600 bg-teal-50 px-3 py-1 rounded-full">
+                            {pendingOffersCount} New Offer{pendingOffersCount > 1 ? 's' : ''}
+                        </span>
+                    )}
+                    <svg 
+                        className={`w-6 h-6 text-gray-400 transition-transform transform ${isOpen ? 'rotate-180' : ''}`} 
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+            </button>
+
+            {/* Accordion Body: Collapsible content area */}
+            <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                isOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+            }`}>
+                <div className="bg-gray-50 p-4 space-y-4 border-t border-gray-200">
+                    {item.offers.length > 0 ? (
+                      item.offers.map(offer => <OfferCard key={offer.id} offer={offer} onOfferAction={onOfferAction} />)
+                    ) : (
+                      <p className="text-center text-gray-500 text-sm py-4">No offers for this item yet.</p>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const OfferCard: React.FC<{ 
+  offer: Offer,
+  onOfferAction: (offerId: string, action: 'accepted' | 'rejected') => Promise<void>
+}> = ({ offer, onOfferAction }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleAction = async (action: 'accepted' | 'rejected') => {
+    setIsProcessing(true);
+    try {
+      await onOfferAction(offer.id, action);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const getStatusDisplay = () => {
+      switch (offer.status) {
+          case 'accepted':
+              return (
+                  <div className="flex items-center space-x-2 text-teal-600 font-semibold">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                      <span>Accepted</span>
+                  </div>
+              );
+          case 'rejected':
+              return (
+                  <div className="flex items-center space-x-2 text-red-600 font-semibold">
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+                       <span>Rejected</span>
+                  </div>
+              );
+          default:
+              return null; // For 'pending', we show buttons instead.
+      }
+  };
+
+  return (
+    <div className="bg-white p-3 rounded-lg border border-gray-200">
+        <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-600 font-semibold text-sm">
+                        {offer.buyer_name?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                </div>
+                <div className="flex-1">
+                    <p className="font-semibold text-gray-800">{offer.buyer_name}</p>
+                    <p className="text-gray-600 italic text-sm">"{offer.message}"</p>
+                    <p className="text-gray-400 text-xs">{new Date(offer.created_at).toLocaleDateString()}</p>
+                </div>
+            </div>
+             <p className="font-bold text-lg text-gray-800">₪{offer.offer_price}</p>
+        </div>
+        
+        {offer.status === 'pending' ? (
+            <div className="flex justify-end items-center space-x-2 mt-2">
+                <button 
+                    onClick={() => handleAction('rejected')}
+                    disabled={isProcessing}
+                    className="bg-white text-gray-700 font-semibold py-1.5 px-6 rounded-full text-sm border border-gray-300 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                >
+                    Reject
+                </button>
+                <button 
+                    onClick={() => handleAction('accepted')}
+                    disabled={isProcessing}
+                    className="bg-teal-500 text-white font-semibold py-1.5 px-6 rounded-full text-sm hover:bg-teal-600 transition-colors disabled:opacity-50"
+                >
+                    Accept
+                </button>
+            </div>
+        ) : (
+             <div className="flex justify-end items-center mt-2">
+                {getStatusDisplay()}
+            </div>
+        )}
+    </div>
+  );
+};
+
 export default function SellerDashboard() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -142,6 +283,10 @@ export default function SellerDashboard() {
   const [totalListed, setTotalListed] = useState<number>(0);
   const [totalSales, setTotalSales] = useState<number>(0);
   const [currentBalance, setCurrentBalance] = useState<number>(0);
+  
+  // State for accordion offers UI
+  const [activeTab, setActiveTab] = useState<'needsAction' | 'history'>('needsAction');
+  const [openItemId, setOpenItemId] = useState<number | null>(null);
 
   // Placeholder data for orders
   const ordersReceived: Order[] = [
@@ -218,6 +363,18 @@ export default function SellerDashboard() {
       fetchOffers();
     }
   }, [session]);
+
+  // Auto-open first item with pending offers
+  useEffect(() => {
+    if (offers.length > 0 && !openItemId) {
+      const firstItemWithPending = offers.find(item => 
+        item.offers.some(offer => offer.status === 'pending')
+      );
+      if (firstItemWithPending) {
+        setOpenItemId(firstItemWithPending.product_id);
+      }
+    }
+  }, [offers]); // Only depends on offers, not openItemId
 
   // --- Handlers ---
   const handleAddNewItem = () => {
@@ -314,6 +471,23 @@ export default function SellerDashboard() {
       default:         return null;
     }
   };
+
+  // Accordion helpers
+  const handleToggle = useCallback((itemId: number) => {
+    console.log('handleToggle called with itemId:', itemId);
+    setOpenItemId(prevId => (prevId === itemId ? null : itemId));
+  }, []); // Empty dependency array - we use prevId pattern so no dependencies needed
+
+  // Filter items based on the active tab for accordion view
+  const filteredOffers = offers.filter(item => {
+    if (activeTab === 'needsAction') {
+      return item.offers.some(offer => offer.status === 'pending');
+    } else { 
+      return item.offers.length > 0 && item.offers.every(offer => offer.status !== 'pending');
+    }
+  });
+
+
 
   if (isLoading) {
     return (
@@ -478,64 +652,63 @@ export default function SellerDashboard() {
           )}
         </section>
 
-        {/* OFFERS ON MY ITEMS */}
+        {/* OFFERS ON MY ITEMS - New Accordion UI */}
         <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Offers on My Items</h2>
+
+          {/* Tabs for filtering */}
+          <div className="flex border-b border-gray-200 mb-6">
+            <button
+              onClick={() => setActiveTab('needsAction')}
+              className={`py-2 px-4 text-lg font-semibold transition-colors ${
+                activeTab === 'needsAction'
+                  ? 'text-teal-500 border-b-2 border-teal-500'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Needs Action
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`py-2 px-4 text-lg font-semibold transition-colors ${
+                activeTab === 'history'
+                  ? 'text-teal-500 border-b-2 border-teal-500'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              History
+            </button>
+          </div>
+
           {loadingOffers ? (
-            <div className="flex flex-col gap-7">
-              <OfferProductSkeleton />
-              <OfferProductSkeleton />
-              <OfferProductSkeleton />
-            </div>
-          ) : offers.length === 0 ? (
-            <div className="py-12 text-center text-gray-400 text-base">No offers received yet.</div>
-          ) : (
-            <div className="flex flex-col gap-7">
-              {offers.map((productOffer) => (
-                <div key={productOffer.product_id} className="bg-gray-50 rounded-xl p-4">
-                  <div className="flex items-center gap-4 mb-4">
-                    <img src={productOffer.product_image} alt={productOffer.product_name} className="w-14 h-14 rounded-lg object-cover border" />
-                    <div>
-                      <div className="font-medium">{productOffer.product_name}</div>
-                      <div className="text-sm text-gray-500">Listed Price: ₪{productOffer.product_price}</div>
-                      <div className="text-sm text-gray-400">{productOffer.offers.length} offer{productOffer.offers.length !== 1 ? 's' : ''}</div>
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white rounded-xl shadow-md border border-gray-200 p-4">
+                  <div className="animate-pulse flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    {productOffer.offers.map((offer) => (
-                      <div key={offer.id} className="flex items-center gap-5 p-3 bg-white rounded-lg border shadow-sm">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-700">{offer.buyer_name}</span>
-                            <span className="text-sm text-gray-400">{new Date(offer.created_at).toLocaleDateString()}</span>
-                          </div>
-                          <div className="text-sm text-gray-600 mt-1">
-                            <span className="font-medium text-teal-700">₪{offer.offer_price}</span>
-                            {offer.message && (
-                              <span className="italic text-gray-400 ml-2">"{offer.message}"</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1 items-end min-w-[110px]">
-                          {statusBadge(offer.status)}
-                          {offer.status === 'pending' && (
-                            <div className="flex gap-2 mt-1">
-                              <button onClick={() => handleOfferAction(offer.id, 'accepted')}
-                                className="px-3 py-1 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 text-xs font-medium transition">
-                                Accept
-                              </button>
-                              <button onClick={() => handleOfferAction(offer.id, 'rejected')}
-                                className="px-3 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium transition">
-                                Reject
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredOffers.length > 0 ? (
+                filteredOffers.map(item => (
+                  <ItemAccordion
+                    key={item.product_id}
+                    item={item}
+                    isOpen={openItemId === item.product_id}
+                    onToggle={() => handleToggle(item.product_id)}
+                    onOfferAction={handleOfferAction}
+                  />
+                ))
+              ) : (
+                <p className="text-center text-gray-500 pt-12">No items in this category.</p>
+              )}
             </div>
           )}
         </section>

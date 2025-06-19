@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
-import { findUserById } from '@/lib/supabase';
+import { findUserById } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {

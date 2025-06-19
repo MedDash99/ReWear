@@ -140,7 +140,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, isAuthenticated, onLogi
           <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-3 flex-shrink-0">
             {item.seller.avatarUrl ? (
               <img
-                src={item.seller.avatarUrl}
+                src={`${item.seller.avatarUrl}?v=${Date.now()}`}
                 alt={item.seller.name || ''}
                 className="w-full h-full rounded-full object-cover"
               />

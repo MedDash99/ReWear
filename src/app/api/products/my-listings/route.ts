@@ -1,17 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
-
-async function getItemsBySeller(sellerId: string) {
-  const { data, error } = await supabase
-    .from('items')
-    .select('*')
-    .eq('seller_id', sellerId);
-
-  if (error) throw error;
-  return data || [];
-}
+import { getItemsBySeller } from '@/lib/database';
 
 export async function GET(request: Request) {
   try {

@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { UserAvatar } from '../ui/UserAvatar';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 import { useMessaging } from '../../contexts/MessagingContext';
@@ -164,12 +165,13 @@ export const ChatModal: React.FC<ChatModalProps> = ({
     return (
       <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
         <div className={`flex max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}>
-          <Avatar className="w-8 h-8">
-            <AvatarImage src={message.sender?.profile_image_url || ''} />
-            <AvatarFallback>
-              {message.sender?.name?.charAt(0)?.toUpperCase() || '?'}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar 
+            user={{
+              name: message.sender?.name,
+              profile_image_url: message.sender?.profile_image_url
+            }}
+            size="sm"
+          />
           
           <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
             <div
@@ -205,12 +207,13 @@ export const ChatModal: React.FC<ChatModalProps> = ({
       <div className="p-4 border-b bg-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={otherParticipant?.profile_image_url || ''} />
-              <AvatarFallback>
-                {otherParticipant?.name?.charAt(0)?.toUpperCase() || '?'}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar 
+              user={{
+                name: otherParticipant?.name,
+                profile_image_url: otherParticipant?.profile_image_url
+              }}
+              size="md"
+            />
             
             <div>
               <h2 className="text-lg font-semibold">
@@ -297,12 +300,13 @@ export const ChatModal: React.FC<ChatModalProps> = ({
         <DialogHeader className="p-4 border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Avatar className="w-10 h-10">
-                <AvatarImage src={otherParticipant?.profile_image_url || ''} />
-                <AvatarFallback>
-                  {otherParticipant?.name?.charAt(0)?.toUpperCase() || '?'}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar 
+                user={{
+                  name: otherParticipant?.name,
+                  profile_image_url: otherParticipant?.profile_image_url
+                }}
+                size="md"
+              />
               
               <div>
                 <DialogTitle className="text-base">

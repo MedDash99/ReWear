@@ -8,6 +8,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Search, Menu, X, Heart } from 'lucide-react';
 import { MessageIcon } from '../messaging';
 import { useTranslation } from '@/i18n/useTranslation';
+import { UserAvatar } from './UserAvatar';
 
 interface HeaderProps {
   searchQuery: string;
@@ -152,6 +153,15 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange, onSignInCl
                     aria-haspopup="true"
                     aria-expanded={isDropdownOpen}
                   >
+                    <UserAvatar 
+                      user={{
+                        name: userData?.name || session.user?.name,
+                        image: session.user?.image,
+                        profile_image_url: userData?.profile_image_url
+                      }}
+                      size="sm"
+                      className="mr-2"
+                    />
                     {t('hi')}, {userData?.name || session.user?.name?.split(' ')[0] || 'User'}!
                     <svg className={`w-4 h-4 ml-1 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                   </button>
