@@ -45,13 +45,6 @@ interface OfferOnProduct {
   offers: Offer[];
 }
 
-interface Order {
-  id: string;
-  buyerName: string;
-  item: string;
-  status: 'Pending' | 'Shipped' | 'Delivered' | 'Canceled';
-}
-
 // Loading skeleton components
 const MetricCardSkeleton = () => (
   <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-center animate-pulse">
@@ -107,20 +100,6 @@ const OfferProductSkeleton = () => (
       </div>
     </div>
   </div>
-);
-
-const OrderItemSkeleton = () => (
-  <li className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-50 p-4 rounded-lg animate-pulse">
-    <div className="space-y-2">
-      <div className="h-4 bg-gray-200 rounded w-24"></div>
-      <div className="h-3 bg-gray-200 rounded w-40"></div>
-    </div>
-    <div className="flex items-center gap-3">
-      <div className="h-6 bg-gray-200 rounded-full w-16"></div>
-      <div className="h-8 bg-gray-200 rounded-lg w-20"></div>
-      <div className="h-8 bg-gray-200 rounded-lg w-24"></div>
-    </div>
-  </li>
 );
 
 const MessageSkeleton = () => (
@@ -288,12 +267,6 @@ export default function SellerDashboard() {
   const [activeTab, setActiveTab] = useState<'needsAction' | 'history'>('needsAction');
   const [openItemId, setOpenItemId] = useState<number | null>(null);
 
-  // Placeholder data for orders
-  const ordersReceived: Order[] = [
-    { id: 'o1', buyerName: 'Alice', item: 'Handmade Scarf', status: 'Pending' },
-    { id: 'o2', buyerName: 'Bob', item: 'Old Book', status: 'Delivered' },
-  ];
-
   // Fetch listings on component mount
   const fetchListings = async () => {
     try {
@@ -450,11 +423,6 @@ export default function SellerDashboard() {
     toast.info('Withdrawal feature coming soon!');
   };
 
-  const handleViewOrder = (orderId: string) => {
-    console.log(`Viewing order details: ${orderId}`);
-    router.push(`/seller/orders/${orderId}`);
-  };
-
   // --- Utility ---
   const statusBadge = (status: string) => {
     switch (status) {
@@ -464,10 +432,6 @@ export default function SellerDashboard() {
       case 'pending':  return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1"><Inbox className="w-4 h-4" /> Pending</span>;
       case 'accepted': return <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1"><CheckCircle className="w-4 h-4" /> Accepted</span>;
       case 'rejected': return <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1"><XCircle className="w-4 h-4" /> Rejected</span>;
-      case 'Pending':  return <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold">Pending</span>;
-      case 'Shipped':  return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">Shipped</span>;
-      case 'Delivered': return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">Delivered</span>;
-      case 'Canceled': return <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-semibold">Canceled</span>;
       default:         return null;
     }
   };
@@ -486,8 +450,6 @@ export default function SellerDashboard() {
       return item.offers.length > 0 && item.offers.every(offer => offer.status !== 'pending');
     }
   });
-
-
 
   if (isLoading) {
     return (
@@ -526,15 +488,6 @@ export default function SellerDashboard() {
               <OfferProductSkeleton />
               <OfferProductSkeleton />
             </div>
-          </section>
-
-          {/* ORDERS SKELETON */}
-          <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
-            <div className="h-6 bg-gray-200 rounded w-36 mb-4 animate-pulse"></div>
-            <ul className="flex flex-col gap-5">
-              <OrderItemSkeleton />
-              <OrderItemSkeleton />
-            </ul>
           </section>
 
           {/* MESSAGES SKELETON */}
@@ -710,45 +663,6 @@ export default function SellerDashboard() {
                 <p className="text-center text-gray-500 pt-12">No items in this category.</p>
               )}
             </div>
-          )}
-        </section>
-
-        {/* ORDERS RECEIVED */}
-        <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Orders Received</h2>
-          {ordersReceived.length === 0 ? (
-            <div className="py-8 text-center text-gray-400">No new orders.</div>
-          ) : (
-            <ul className="flex flex-col gap-5">
-              {ordersReceived.map((order) => (
-                <li key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gray-50 p-4 rounded-lg">
-                  <div>
-                    <div className="font-medium text-gray-700">Order #{order.id}</div>
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">{order.item}</span> — <span className="font-medium">{order.buyerName}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {statusBadge(order.status)}
-                    <Button
-                      variant="outline"
-                      className="text-xs rounded-lg"
-                      onClick={() => handleViewOrder(order.id)}
-                    >
-                      View Details
-                    </Button>
-                    {order.status === "Pending" && (
-                      <Button
-                        className="bg-teal-600 text-white hover:bg-teal-700 rounded-lg text-xs"
-                        onClick={() => toast.info("Mark Shipped feature coming soon!")}
-                      >
-                        Mark Shipped
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
           )}
         </section>
 

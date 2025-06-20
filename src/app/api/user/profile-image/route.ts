@@ -1,7 +1,6 @@
 // src/app/api/user/profile-image/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { unstable_update } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
@@ -169,19 +168,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Database update result:', updatedUser.profile_image_url);
-
-    // Update the NextAuth session with the new profile image URL
-    try {
-      await unstable_update({
-        user: {
-          image: imageUrl
-        }
-      });
-      console.log('Session updated successfully with new profile image');
-    } catch (updateError) {
-      console.warn('Failed to update session:', updateError);
-      // Don't fail the request if session update fails
-    }
 
     return NextResponse.json({
       success: true,

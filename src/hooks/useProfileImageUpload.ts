@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import imageCompression from 'browser-image-compression';
 
 interface UploadResult {
@@ -15,6 +16,7 @@ interface UploadResult {
 export function useProfileImageUpload() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { data: session, update } = useSession();
 
   const compressImage = async (file: File): Promise<File> => {
     const options = {
@@ -68,6 +70,10 @@ export function useProfileImageUpload() {
       }
 
       const result: UploadResult = await response.json();
+      
+      // Trigger a session update to refetch the new user data with the new image
+      await update();
+      
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -94,6 +100,10 @@ export function useProfileImageUpload() {
       }
 
       const result: UploadResult = await response.json();
+      
+      // Trigger a session update to refetch the new user data
+      await update();
+      
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
