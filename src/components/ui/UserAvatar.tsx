@@ -1,14 +1,21 @@
 "use client";
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 interface UserAvatarProps {
-  user?: {
+  className?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+}
+
+interface OtherUserAvatarProps {
+  user: {
     name?: string | null;
     image?: string | null;
     profile_image_url?: string | null;
-  } | null;
+  };
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
@@ -20,7 +27,46 @@ const sizeClasses = {
   xl: 'h-20 w-20 text-lg'
 };
 
-export function UserAvatar({ user, className, size = 'md' }: UserAvatarProps) {
+export function UserAvatar({ className, size = 'md' }: UserAvatarProps) {
+  const { data: session, status } = useSession();
+
+  const avatarSizeClass = sizeClasses[size];
+
+  if (status === "loading") {
+    return <Skeleton className={cn("rounded-full", avatarSizeClass, className)} />;
+  }
+  
+  const user = session?.user;
+  const userName = user?.name;
+  const userImage = user?.image;
+  
+  let avatarSrc = userImage || '/default-user.png';
+  
+  const getInitials = (name?: string | null) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  return (
+    <Avatar className={cn(avatarSizeClass, className)}>
+      <AvatarImage 
+        src={avatarSrc} 
+        alt={userName || 'User avatar'}
+        referrerPolicy="no-referrer"
+      />
+      <AvatarFallback className="bg-teal-100 text-teal-700 font-medium">
+        {getInitials(userName)}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
+
+export function OtherUserAvatar({ user, className, size = 'md' }: OtherUserAvatarProps) {
   // Fallback logic: Custom profile image -> Google image -> Default
   let avatarSrc = user?.profile_image_url || user?.image || '/default-user.png';
   

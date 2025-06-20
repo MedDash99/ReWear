@@ -365,11 +365,6 @@ const BuyerDashboard: React.FC = () => {
         <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
           <div className="flex items-center gap-6">
             <UserAvatar 
-              user={{
-                name: session.user?.name,
-                image: session.user?.image,
-                profile_image_url: (session.user as any)?.profile_image_url
-              }}
               size="xl"
               className="border-2 border-gray-200"
             />

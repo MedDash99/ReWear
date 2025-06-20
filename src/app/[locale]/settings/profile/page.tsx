@@ -146,11 +146,6 @@ export default function ProfileSettingsPage() {
           <div className="flex items-center gap-6">
             <div className="relative">
               <UserAvatar 
-                user={{
-                  name: userData?.name || session.user?.name,
-                  image: session.user?.image,
-                  profile_image_url: userData?.profile_image_url
-                }}
                 size="xl"
                 className="border-4 border-gray-200"
               />

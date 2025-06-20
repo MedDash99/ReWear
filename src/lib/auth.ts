@@ -129,7 +129,26 @@ export const authOptions: NextAuthOptions = {
       // Pass the custom access token and the correct user ID (the UUID)
       // to the client-side session object.
       session.supabaseAccessToken = token.supabaseAccessToken;
-      session.user.id = token.sub || '';
+      
+      if (token.sub) {
+        session.user.id = token.sub;
+        try {
+          const { data: userData } = await supabaseAdmin
+            .from('users')
+            .select('name, profile_image_url')
+            .eq('id', token.sub)
+            .single();
+          
+          if (userData) {
+            session.user.name = userData.name;
+            // Map the database profile_image_url to session.user.image
+            session.user.image = userData.profile_image_url;
+          }
+        } catch (error) {
+          console.error('Error fetching user data for session:', error);
+        }
+      }
+      
       return session;
     },
   },

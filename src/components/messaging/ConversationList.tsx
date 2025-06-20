@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { UserAvatar } from '../ui/UserAvatar';
+import { UserAvatar, OtherUserAvatar } from '../ui/UserAvatar';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 import { Card, CardContent } from '../ui/card';
@@ -115,7 +114,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({ className })
                     <div className="flex items-center gap-3">
                       {/* Avatar */}
                       <div className="relative">
-                        <UserAvatar 
+                        <OtherUserAvatar 
                           user={{
                             name: otherParticipant.name,
                             profile_image_url: otherParticipant.profile_image_url
