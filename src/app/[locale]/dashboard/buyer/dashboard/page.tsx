@@ -8,6 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { ShoppingBag, Heart, Bell, HelpCircle, Inbox, CheckCircle, XCircle } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 
 // Define types for data
 interface Order {
@@ -346,8 +347,6 @@ const BuyerDashboard: React.FC = () => {
   }
 
   const userName = session.user?.name ?? 'Buyer';
-  const profileImageUrl = session.user?.image ?? '/default-profile.png';
-
   return (
     <div className="bg-[#F6F6F6] min-h-screen py-10 px-2 sm:px-6">
       <div className="max-w-5xl mx-auto">
@@ -365,11 +364,9 @@ const BuyerDashboard: React.FC = () => {
         {/* PROFILE SECTION */}
         <section className="bg-white rounded-2xl shadow-md p-6 mb-8">
           <div className="flex items-center gap-6">
-            <img
-              src={profileImageUrl}
-              alt="Profile"
-              className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
-              referrerPolicy="no-referrer"
+            <UserAvatar 
+              size="xl"
+              className="border-2 border-gray-200"
             />
             <div>
               <h2 className="text-xl font-bold text-gray-800 mb-2">Welcome back, {userName}!</h2>

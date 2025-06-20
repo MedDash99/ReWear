@@ -16,7 +16,7 @@ import {
   getUnreadMessageCount,
   subscribeToMessages,
   generateConversationId
-} from '../lib/supabase';
+} from '../lib/database';
 import { toast } from 'sonner';
 
 interface MessagingContextType {

@@ -1,35 +1,34 @@
-import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import { DefaultSession, NextAuthOptions } from "next-auth";
+import { createClient } from "@supabase/supabase-js";
 import GoogleProvider from "next-auth/providers/google";
-import { compare } from "bcryptjs";
-import { findUserByEmail, createUser, updateUserGoogleId } from "@/lib/database";
+import CredentialsProvider from "next-auth/providers/credentials";
+import jwt from "jsonwebtoken";
 
-interface User {
-  id: string;
-  email: string;
-  name: string | null;
-  password_hash?: string | null;
-  googleId?: string | null;
-  profile_image_url?: string | null;
-  rating?: number;
-  cart?: string | null;
-  wishlist?: string | null;
-  address?: string | null;
-  phone?: string | null;
-  created_at?: string;
-  updated_at?: string;
-}
+// Create a Supabase admin client for secure database queries
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
 
-// Extend the NextAuth User type to include our custom properties
+// We are extending the default NextAuth types to include properties
+// we need in our application
 declare module "next-auth" {
+  interface Session {
+    supabaseAccessToken?: string;
+    user: {
+      id: string;
+    } & DefaultSession["user"];
+  }
+  
+  // The User object comes from the database
   interface User {
-    profile_image_url?: string | null;
+    image?: string | null;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    profile_image_url?: string | null;
+    supabaseAccessToken?: string;
   }
 }
 
@@ -53,115 +52,115 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Password cannot be empty");
         }
 
-        try {
-          const user = await findUserByEmail(credentials.email) as User | undefined;
+        // Use Supabase's native auth system for password verification
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
 
-          if (!user || !user.password_hash) {
-            throw new Error("Invalid credentials: User not found or no password set.");
-          }
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        });
 
-          const isCorrectPassword = await compare(
-            credentials.password,
-            user.password_hash
-          );
-
-          if (!isCorrectPassword) {
-            throw new Error("Invalid credentials: Incorrect password.");
-          }
-
-          const userResult = {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            profile_image_url: user.profile_image_url
-          };
-          
-          return userResult;
-        } catch (error) {
-          console.error("[AUTH] Authorization error:", error);
-          throw error;
+        if (error) {
+          console.error("[AUTH] Supabase login error:", error.message);
+          return null;
         }
+
+        // If login is successful, return the user object with profile data
+        const { data: profileData } = await supabase
+          .from('users')
+          .select('name, profile_image_url')
+          .eq('id', data.user.id)
+          .single();
+
+        return {
+          id: data.user.id,
+          email: data.user.email,
+          name: profileData?.name,
+          image: profileData?.profile_image_url
+        };
       }
     })
   ],
-  callbacks: {
-    async signIn({ user, account, profile }) {
-      if (account?.provider === "google") {
-        try {
-          const existingUser = await findUserByEmail(user.email!) as any;
 
-          if (!existingUser) {
-            // No existing user - create a new one with Google ID
-            const newUser = await createUser(
-              user.email!,
-              "", // No password for Google auth
-              user.name || undefined,
-              account.providerAccountId // Google sub ID
-            );
-            user.id = newUser.id;
-          } else {
-            // Existing user found - link Google account if not already linked
-            if (!existingUser.google_id) {
-              // User exists but doesn't have Google ID - link the accounts
-              await updateUserGoogleId(existingUser.id, account.providerAccountId);
-              console.log(`[AUTH] Linked Google account to existing user: ${existingUser.email}`);
-            }
-            user.id = existingUser.id;
+  callbacks: {
+    async jwt({ token, user, account }) {
+      // If the 'account' object exists, it's a sign-in event.
+      if (account && user) {
+        // Look for the user in your public 'users' table using their email.
+        const { data: supabaseUser, error } = await supabaseAdmin
+          .from('users') // IMPORTANT: Change 'users' to your profile table name if it's different.
+          .select('id') // Select the 'id' column, which should be the UUID.
+          .eq('email', user.email)
+          .single();
+
+        if (error) {
+            console.error("Error fetching Supabase user:", error);
+        }
+
+        // If a user is found in your table, overwrite the token's subject ('sub')
+        // with the correct Supabase User UUID.
+        if (supabaseUser) {
+          token.sub = supabaseUser.id;
+        }
+      }
+
+      // Now, create the custom Supabase JWT. The 'sub' field will now
+      // correctly contain the Supabase User UUID.
+      const payload = {
+        aud: 'authenticated',
+        exp: Math.floor((token.exp as number) * 1000) / 1000,
+        sub: token.sub || '',
+        email: token.email,
+        role: 'authenticated',
+      };
+
+      token.supabaseAccessToken = jwt.sign(
+        payload,
+        process.env.SUPABASE_JWT_SECRET || ''
+      );
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      // Pass the custom access token and the correct user ID (the UUID)
+      // to the client-side session object.
+      session.supabaseAccessToken = token.supabaseAccessToken;
+      
+      if (token.sub) {
+        session.user.id = token.sub;
+        try {
+          const { data: userData } = await supabaseAdmin
+            .from('users')
+            .select('name, profile_image_url')
+            .eq('id', token.sub)
+            .single();
+          
+          if (userData) {
+            session.user.name = userData.name;
+            // Map the database profile_image_url to session.user.image
+            session.user.image = userData.profile_image_url;
           }
         } catch (error) {
-          console.error("[AUTH] Google sign-in error:", error);
-          return false; 
+          console.error('Error fetching user data for session:', error);
         }
       }
       
-      return true;
-    },
- 
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.sub = user.id;
-        token.name = user.name;
-        token.profile_image_url = user.profile_image_url;
-      }
-      return token;
-    },
- 
-    async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub as string;
-        session.user.name = token.name as string;
-        (session.user as any).profile_image_url = token.profile_image_url as string;
-      }
       return session;
-    }
+    },
   },
+
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
   },
+
   secret: process.env.NEXTAUTH_SECRET,
-  debug: false,
-  logger: {
-    error(code, metadata) {
-      console.error("[NEXTAUTH ERROR]", code, metadata);
-    },
-    warn(code) {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("[NEXTAUTH WARN]", code);
-      }
-    },
-    debug(code, metadata) {
-      
-    }
-  },
-  events: {
-    async signIn({ user, account, profile, isNewUser }) {
-      if (process.env.NODE_ENV === "development") {
-        console.log("[AUTH] User signed in:", { email: user?.email, provider: account?.provider });
-      }
-    }
-  },
+  debug: process.env.NODE_ENV === "development",
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
   },
-}; 
+};

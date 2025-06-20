@@ -15,11 +15,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [activeView, setActiveView] = useState("overview");
 
   useEffect(() => {
-    if (pathname.startsWith("/dashboard/seller/dashboard")) {
+    if (pathname.includes("/seller")) {
       setActiveView("seller");
-    } else if (pathname.startsWith("/dashboard/buyer/dashboard")) {
+    } else if (pathname.includes("/buyer")) {
       setActiveView("buyer");
-    } else if (pathname === "/dashboard" || pathname.startsWith("/dashboard/overview")) {
+    } else {
       setActiveView("overview");
     }
   }, [pathname]);
@@ -33,13 +33,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="text-center">
           <h1 className="text-2xl sm:text-3xl font-bold">Hello, {userName}</h1>
           <div className="flex justify-center mt-4">
-            <div className="inline-flex items-center bg-gray-100 rounded-full p-1 w-full max-w-md sm:w-auto overflow-x-auto">
+            <div className="relative inline-flex items-center bg-gray-100 rounded-full p-1 w-full max-w-md sm:w-auto overflow-x-auto">
+              {/* Sliding background indicator */}
+              <div 
+                className="absolute top-1 bottom-1 bg-white shadow-sm rounded-full transition-all duration-300 ease-out"
+                style={{
+                  left: activeView === "seller" ? "0.25rem" : activeView === "overview" ? "33.333%" : "66.666%",
+                  width: "calc(33.333% - 0.125rem)"
+                }}
+              />
+              
+              {/* Navigation buttons */}
               <Link href="/dashboard/seller/dashboard" passHref>
                 <button
-                  className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-all text-sm whitespace-nowrap ${
+                  className={`relative z-10 flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-all duration-200 text-sm whitespace-nowrap ${
                     activeView === "seller"
-                      ? "bg-white shadow text-teal-700 font-semibold"
-                      : "text-gray-500"
+                      ? "text-teal-700 font-semibold"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
                   <Store className="h-4 w-4 text-orange-500" />
@@ -49,10 +59,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
               <Link href="/dashboard" passHref>
                 <button
-                  className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-all text-sm whitespace-nowrap ${
+                  className={`relative z-10 flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-all duration-200 text-sm whitespace-nowrap ${
                     activeView === "overview"
-                      ? "bg-white shadow text-teal-700 font-semibold"
-                      : "text-gray-500"
+                      ? "text-teal-700 font-semibold"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
                   <LayoutDashboard className="h-4 w-4" />
@@ -61,10 +71,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
               <Link href="/dashboard/buyer/dashboard" passHref>
                 <button
-                  className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-all text-sm whitespace-nowrap ${
+                  className={`relative z-10 flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-all duration-200 text-sm whitespace-nowrap ${
                     activeView === "buyer"
-                      ? "bg-white shadow text-teal-700 font-semibold"
-                      : "text-gray-500"
+                      ? "text-teal-700 font-semibold"
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
                   <ShoppingBag className="h-4 w-4" />
